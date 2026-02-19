@@ -27,8 +27,9 @@
       </div>
     </div>
 
-    <%= form_with(model: @property, class: "space-y-4") do |form| %>
-      
+    <%= form_with(model: @property, 
+              class: "space-y-4", 
+              data: { action: "submit->connection#handleOfflineSubmit" }) do |form| %>
       <div>
         <%= form.label :usage_type, class: "block text-sm font-medium text-gray-700" %>
         <%= form.select :usage_type, ["Retail", "Residential", "Vacant", "Public", "Mixed-Use"], {}, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" %>

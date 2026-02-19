@@ -1,4 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
+import { SyncService } from "../sync_service"
+
 
 export default class extends Controller {
   static targets = ["banner", "lastSync"]
@@ -20,13 +22,11 @@ export default class extends Controller {
 
   updateStatus() {
     if (navigator.onLine) {
-      // We are ONLINE
-      this.bannerTarget.classList.add("hidden")
-      
-      // TODO: This is where we will trigger the Outbox Sync later!
-      this.recordSync() 
+    this.bannerTarget.classList.add("hidden")
+    SyncService.syncOutbox().then(() => {
+      this.recordSync() // Update the "Last Sync" timestamp after successful upload
+    })
     } else {
-      // We are OFFLINE
       this.bannerTarget.classList.remove("hidden")
     }
   }
