@@ -6,6 +6,27 @@
       <%= link_to "Close", root_path, class: "text-gray-500 hover:text-gray-800 font-medium" %>
     </div>
 
+    <div class="mb-6 bg-gray-50 p-4 rounded-lg text-sm text-gray-700">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <span class="block font-bold text-gray-900">Owner</span>
+          <%= @property.owner.presence || "Unknown" %>
+        </div>
+        <div>
+          <span class="block font-bold text-gray-900">Year Built</span>
+          <%= @property.year_built.presence || "Unknown" %>
+        </div>
+        <div>
+          <span class="block font-bold text-gray-900">Last Sale Date</span>
+          <%= @property.sale_date ? @property.sale_date.strftime("%B %d, %Y") : "Unknown" %>
+        </div>
+        <div>
+          <span class="block font-bold text-gray-900">Last Sale Price</span>
+          <%= @property.sale_price ? number_to_currency(@property.sale_price, precision: 0) : "Unknown" %>
+        </div>
+      </div>
+    </div>
+
     <%= form_with(model: @property, class: "space-y-4") do |form| %>
       
       <div>
@@ -18,23 +39,35 @@
         <%= form.text_area :notes, rows: 3, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" %>
       </div>
 
+      <% if @property.photo.attached? %>
+        <div class="pt-2">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Current Site Photo</label>
+          <div class="rounded-md overflow-hidden border border-gray-200 shadow-sm">
+            <%= image_tag @property.photo, class: "w-full object-cover max-h-48" %>
+          </div>
+        </div>
+      <% end %>
+
       <div class="pt-2">
-        <label class="block w-full flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:bg-gray-50">
+        <label class="block w-full flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
           <div class="space-y-1 text-center">
             <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
-            <div class="flex text-sm text-gray-600">
-              <span class="font-medium text-indigo-600 hover:text-indigo-500">Take a photo</span>
+            <div class="flex text-sm text-gray-600 justify-center">
+              <span class="font-medium text-indigo-600 hover:text-indigo-500">
+                <%= @property.photo.attached? ? "Replace photo" : "Take a photo" %>
+              </span>
             </div>
           </div>
-          <input type="file" name="property[photos][]" class="sr-only" accept="image/*" capture="environment">
+          <%= form.file_field :photo, class: "sr-only", accept: "image/*", capture: "environment" %>
         </label>
       </div>
 
-      <div class="pt-4">
-        <%= form.submit "Update Property", class: "w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+      <div class="pt-4 pb-8">
+        <%= form.submit "Update Property", class: "w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors" %>
       </div>
+      
     <% end %>
   </div>
 </turbo-frame>
