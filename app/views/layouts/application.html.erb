@@ -24,7 +24,9 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="h-screen flex flex-col overflow-hidden bg-gray-50" data-controller="connection">
+  <body class="h-screen flex flex-col overflow-hidden bg-gray-50" 
+        data-controller="connection"
+        data-action="online@window->connection#updateStatus offline@window->connection#updateStatus">
     
     <header class="bg-white border-b border-gray-200 shadow-sm z-50 flex-shrink-0">
       <div class="px-4 py-3 flex items-center justify-between">

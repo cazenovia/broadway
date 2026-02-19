@@ -1,30 +1,33 @@
 import { Controller } from "@hotwired/stimulus"
-import Dexie from "dexie"
+import Dexie from "dexie" 
 import { SyncService } from "sync_service"
 
 export default class extends Controller {
   static targets = ["badge", "icon", "text", "lastSync", "spinner"]
 
   connect() {
+    console.log("Connection Controller Booted. Status:", navigator.onLine ? "Online" : "Offline")
     this.updateStatus()
-    window.addEventListener("online", () => this.updateStatus())
-    window.addEventListener("offline", () => this.updateStatus())
     this.updateSyncDisplay()
   }
 
   async updateStatus() {
-    if (navigator.onLine) {
-      // Transition to ONLINE state
-      this.badgeTarget.classList.replace("bg-red-50", "bg-gray-50")
-      this.badgeTarget.classList.replace("border-red-200", "border-gray-200")
-      
-      this.iconTarget.classList.replace("bg-red-500", "bg-green-500")
-      this.iconTarget.classList.add("animate-pulse")
-      
-      this.textTarget.textContent = "Online"
-      this.textTarget.classList.replace("text-red-700", "text-gray-700")
+    console.log("Network change detected. Now:", navigator.onLine ? "Online" : "Offline")
+    
+    // 1. Wipe the slate clean (remove all possible color classes)
+    this.badgeTarget.classList.remove("bg-gray-50", "border-gray-200", "bg-red-50", "border-red-200")
+    this.iconTarget.classList.remove("bg-green-500", "bg-red-500", "animate-pulse")
+    this.textTarget.classList.remove("text-gray-700", "text-red-700")
 
-      // Trigger sync and show spinner
+    // 2. Apply the exact state we need
+    if (navigator.onLine) {
+      // ONLINE
+      this.badgeTarget.classList.add("bg-gray-50", "border-gray-200")
+      this.iconTarget.classList.add("bg-green-500", "animate-pulse")
+      this.textTarget.textContent = "Online"
+      this.textTarget.classList.add("text-gray-700")
+
+      // Trigger Sync
       this.spinnerTarget.classList.remove("hidden")
       try {
         await SyncService.syncOutbox()
@@ -36,15 +39,11 @@ export default class extends Controller {
       }
 
     } else {
-      // Transition to OFFLINE state
-      this.badgeTarget.classList.replace("bg-gray-50", "bg-red-50")
-      this.badgeTarget.classList.replace("border-gray-200", "border-red-200")
-      
-      this.iconTarget.classList.replace("bg-green-500", "bg-red-500")
-      this.iconTarget.classList.remove("animate-pulse")
-      
+      // OFFLINE
+      this.badgeTarget.classList.add("bg-red-50", "border-red-200")
+      this.iconTarget.classList.add("bg-red-500")
       this.textTarget.textContent = "Offline"
-      this.textTarget.classList.replace("text-gray-700", "text-red-700")
+      this.textTarget.classList.add("text-red-700")
       
       this.spinnerTarget.classList.add("hidden")
     }
