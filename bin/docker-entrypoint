@@ -3,11 +3,19 @@
 # If running the rails server (either directly or via Thruster)
 if [ "${1}" == "./bin/thrust" ] || ([ "${1}" == "./bin/rails" ] && [ "${2}" == "server" ]); then
   
+  # Safety check to prove the URL is making it to the server
+  if [ -z "$DATABASE_URL" ]; then
+    echo "❌ FATAL: DATABASE_URL is missing from Render Environment tab!"
+  else
+    echo "✅ DATABASE_URL is detected."
+  fi
+
   echo "⚙️ Compiling assets for production..."
   ./bin/rails assets:precompile
   
-  echo "🗄️ Preparing the database..."
-  ./bin/rails db:prepare
+  echo "🗄️ Running database migrations..."
+  # CHANGED: Use migrate instead of prepare to bypass Render permission bugs
+  ./bin/rails db:migrate
 
 fi
 
