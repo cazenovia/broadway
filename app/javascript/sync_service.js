@@ -1,4 +1,4 @@
-import Dexie from 'dexie';
+import { Dexie } from 'dexie';
 
 // Define the local database
 const db = new Dexie('BroadwayOfflineDB');
