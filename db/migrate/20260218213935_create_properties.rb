@@ -4,15 +4,16 @@ class CreateProperties < ActiveRecord::Migration[8.0]
 
     create_table :properties do |t|
       t.string :address
-      t.string :owner_name
-      t.string :usage_type
+      t.string :owner
+      t.string :usage_type # (Remembering your fix!)
       t.text :notes
       
-      t.st_point :lonlat, geographic: true
+      # CHANGED: We now use a generic geometry column to hold Polygons
+      t.geometry :boundary, geographic: true 
 
       t.timestamps
     end
     
-    add_index :properties, :lonlat, using: :gist
+    add_index :properties, :boundary, using: :gist
   end
 end
