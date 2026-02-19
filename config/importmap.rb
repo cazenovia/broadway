@@ -8,3 +8,4 @@ pin_all_from "app/javascript/controllers", under: "controllers"
 pin "mapbox-gl" # @3.18.1
 pin "dexie" # @4.0.11
 pin "process" # @2.1.0
+pin "sync_service", to: "sync_service.js"

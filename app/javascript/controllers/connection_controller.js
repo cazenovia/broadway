@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { SyncService } from "../sync_service"
+import { SyncService } from "sync_service"
 
 
 export default class extends Controller {
