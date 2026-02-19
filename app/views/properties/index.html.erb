@@ -1,10 +1,33 @@
 <div style="width: 100vw; height: 100vh;"
      data-controller="map"
      data-map-api-key-value="<%= Rails.application.credentials.dig(:mapbox, :public_key) %>"
-     data-properties="<%= @properties.map { |p| { 
-       lat: p.lonlat.latitude, 
-       lon: p.lonlat.longitude, 
-       address: p.address, 
-       usage: p.usage 
-     } }.to_json %>">
+     data-map-properties-value="<%= {
+       type: "FeatureCollection",
+       features: @properties.map { |p| 
+         {
+           type: "Feature",
+           properties: {
+             id: p.id,
+             address: p.address,
+             usage: p.usage
+           },
+           geometry: {
+             type: "Polygon",
+             # For a real app, this comes from the database. 
+             # For now, we are drawing a tiny 20x20 meter square around your point!
+             coordinates: [[
+               [p.lonlat.longitude - 0.0001, p.lonlat.latitude - 0.0001],
+               [p.lonlat.longitude + 0.0001, p.lonlat.latitude - 0.0001],
+               [p.lonlat.longitude + 0.0001, p.lonlat.latitude + 0.0001],
+               [p.lonlat.longitude - 0.0001, p.lonlat.latitude + 0.0001],
+               [p.lonlat.longitude - 0.0001, p.lonlat.latitude - 0.0001] # Close the loop
+             ]]
+           }
+         }
+       }
+     }.to_json %>">
 </div>
+
+<turbo-frame id="property_editor" 
+             class="fixed bottom-0 left-0 right-0 p-4 bg-transparent pointer-events-none">
+  </turbo-frame>

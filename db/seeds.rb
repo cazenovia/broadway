@@ -22,22 +22,22 @@ end
 Property.create!([
   {
     address: "500 S Broadway",
-    owner: "City of Baltimore",
-    usage: "Public",
+    owner_name: "City of Baltimore",
+    usage_type: "Public",
     notes: "Old market building, potential for mixed use.",
     lonlat: point(39.2855, -76.5938)
   },
   {
     address: "512 S Broadway",
-    owner: "J. Smith LLC",
-    usage: "Retail",
+    owner_name: "J. Smith LLC",
+    usage_type: "Retail",
     notes: "Currently a vacant storefront. Good condition.",
     lonlat: point(39.2859, -76.5939)
   },
   {
     address: "604 S Broadway",
-    owner: "Unknown",
-    usage: "Residential",
+    owner_name: "Unknown",
+    usage_type: "Residential",
     notes: "Needs facade work. Contact owner.",
     lonlat: point(39.2871, -76.5940)
   }
