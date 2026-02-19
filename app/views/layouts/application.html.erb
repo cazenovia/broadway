@@ -25,6 +25,20 @@
   </head>
 
   <body>
+  <body data-controller="connection">
+    
+    <div data-connection-target="banner" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-600 text-white px-4 py-2 shadow-md">
+      <div class="container mx-auto flex justify-between items-center text-sm font-medium">
+        <div class="flex items-center space-x-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <span>Offline Mode: Saving to device</span>
+        </div>
+        <div class="text-red-200 text-xs">
+          Last sync: <span data-connection-target="lastSync">Never</span>
+        </div>
+      </div>
+    </div>
+
     <main class="container mx-auto mt-28 px-5 flex">
       <%= yield %>
     </main>
