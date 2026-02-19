@@ -1,7 +1,11 @@
 #!/bin/bash -e
 
 # If running the rails server then create or migrate existing database
-if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
+if [ "${1}" == "./bin/rails" ] && [ "${2}" == "server" ]; then
+  
+  # Package our assets now that we are safely connected to the Render DB
+  ./bin/rails assets:precompile
+  
   ./bin/rails db:prepare
 fi
 
