@@ -86,7 +86,10 @@ export default class extends Controller {
         const displayPhoto = document.getElementById('display_photo');
         if (photoContainer && displayPhoto) {
           if (clickedProperty.photo_url) {
-            displayPhoto.src = clickedProperty.photo_url;
+            // CACHE-BUSTER: Force Safari to fetch the real image instead of a broken cache!
+            const separator = clickedProperty.photo_url.includes('?') ? '&' : '?';
+            displayPhoto.src = clickedProperty.photo_url + separator + "cb=" + new Date().getTime();
+            
             photoContainer.classList.remove('hidden');
           } else {
             displayPhoto.src = "";
