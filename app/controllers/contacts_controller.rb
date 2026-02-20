@@ -3,7 +3,7 @@ class ContactsController < ApplicationController
     @property = Property.find(params[:property_id])
         
     @contact = @property.contacts.build(contact_params)
-    @contact.user = current_user
+    @contact.user = Current.session.user
     
     if @contact.save
       render json: { status: "success", message: "Contact created!" }, status: :created
