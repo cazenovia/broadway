@@ -73,8 +73,9 @@ export default class extends Controller {
       
       alert("Note saved locally! It will upload automatically when signal returns.")
       
-      const frame = document.getElementById("property_editor")
-      if (frame) frame.src = "" 
+      // Close the new slider card!
+      const card = document.getElementById("property_editor_card")
+      if (card) card.classList.add("translate-y-full") 
     }
   }
 }
