@@ -20,33 +20,31 @@ export default class extends Controller {
       zoom: 16 
     });
 
-    this.map.on('load', () => {
-      console.log("3. Base map loaded! Drawing shapes...");
-      
-      this.map.addSource('broadway-parcels', {
-        type: 'geojson',
-        data: this.propertiesValue
-      });
+    this.map.on('click', 'parcel-fills', (e) => {
+        const clickedProperty = e.features[0].properties;
 
-      // Draw the colored outlines based on usage_type
-      this.map.addLayer({
-        id: 'parcel-fills',
-        type: 'fill',
-        source: 'broadway-parcels',
-        paint: {
-          'fill-color': [
-            'match',
-            ['get', 'usage_type'],    // Look at the usage_type property
-            'Retail', '#10B981',      // Green for Retail
-            'Residential', '#3B82F6', // Blue for Residential
-            'Vacant', '#EF4444',      // Red for Vacant
-            'Public', '#8B5CF6',      // Purple for Public (added for your seed data!)
-            '#9CA3AF'                 // Gray for anything else
-          ],
-          'fill-opacity': 0.6
-        }
-      });
+        // 1. Set the form's destination URL dynamically
+        const form = document.getElementById('property_form');
+        if (form) form.action = `/properties/${clickedProperty.id}`;
 
+        // 2. Inject the data into the HTML fields
+        // (Using standard DOM methods to update the hidden template)
+        const addressEl = document.getElementById('form_address');
+        if (addressEl) addressEl.textContent = clickedProperty.address || "Unknown Address";
+        
+        const usageEl = document.getElementById('form_usage_type');
+        if (usageEl) usageEl.value = clickedProperty.usage_type || "Residential";
+        
+        const notesEl = document.getElementById('form_notes');
+        if (notesEl) notesEl.value = clickedProperty.notes || "";
+        
+        const photoEl = document.getElementById('form_photo');
+        if (photoEl) photoEl.value = ""; // Always clear the old photo input!
+
+        // 3. Slide the card up onto the screen
+        const card = document.getElementById('property_editor_card');
+        if (card) card.classList.remove('translate-y-full');
+      });
       // Draw high-visibility BLACK borders
       this.map.addLayer({
         id: 'parcel-borders',
