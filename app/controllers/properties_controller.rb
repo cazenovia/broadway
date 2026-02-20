@@ -39,8 +39,10 @@ class PropertiesController < ApplicationController
     if @property.update(property_params)
       # If the request came from our background JavaScript
       if request.headers["Accept"].to_s.include?("application/json") || request.format.json?
-        # Grab the brand new photo URL to send back to the iPad
-        new_url = @property.photo.attached? ? url_for(@property.photo) : nil
+        
+        # USE RAILS_BLOB_PATH INSTEAD OF URL_FOR to prevent the 500 crash on Render
+        new_url = @property.photo.attached? ? rails_blob_path(@property.photo, only_path: true) : nil
+        
         render json: { status: "success", new_photo_url: new_url }, status: :ok
       else
         redirect_to property_url(@property), notice: "Property was successfully updated."
