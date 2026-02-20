@@ -61,9 +61,11 @@
           </div>
 
           <div class="flex items-center pl-4 sm:pl-6 border-l border-gray-200">
-            <button class="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
-              Sign In
-            </button>
+            <% if Current.session %>
+              <%= link_to "Log Out", session_path, data: { turbo_method: :delete }, class: "text-sm font-medium text-gray-600 hover:text-red-600 transition-colors" %>
+            <% else %>
+              <%= link_to "Sign In", new_session_path, class: "text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors" %>
+            <% end %>
           </div>
 
         </div>

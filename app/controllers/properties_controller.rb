@@ -81,7 +81,7 @@ class PropertiesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def property_params
-      p = params.expect(property: [ :address, :owner_name, :zoning, :usage_type, :notes, :photo ])
+      p = params.expect(property: [ :address, :owner_name, :zoning, :usage_type, :notes, :photo, :residential_units, :estimated_residents ])
       
       # The Gatekeeper
       if p[:photo].blank? || (p[:photo].respond_to?(:size) && p[:photo].size == 0)

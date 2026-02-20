@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_20_181958) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_20_215145) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "postgis"
@@ -61,14 +61,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_181958) do
     t.string "address"
     t.geography "boundary", limit: {srid: 4326, type: "geometry", geographic: true}
     t.datetime "created_at", null: false
+    t.integer "estimated_residents"
     t.text "notes"
     t.string "owner"
+    t.integer "residential_units"
     t.datetime "sale_date"
     t.integer "sale_price"
     t.datetime "updated_at", null: false
     t.string "usage_type"
     t.integer "year_built"
     t.index ["boundary"], name: "index_properties_on_boundary", using: :gist
+  end
+
+  create_table "sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip_address"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "solid_cache_entries", force: :cascade do |t|
+    t.integer "byte_size", null: false
+    t.datetime "created_at", null: false
+    t.binary "key", null: false
+    t.bigint "key_hash", null: false
+    t.binary "value", null: false
+    t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
+    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
+    t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
@@ -225,6 +247,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_20_181958) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "contacts", "properties"
   add_foreign_key "contacts", "users"
+  add_foreign_key "sessions", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

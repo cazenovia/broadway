@@ -66,6 +66,15 @@ export default class extends Controller {
         if (notesEl) notesEl.value = clickedProperty.notes || "";
         const photoEl = document.getElementById('form_photo');
         if (photoEl) photoEl.value = ""; 
+        const formUnits = document.getElementById('form_units');
+        if (formUnits) formUnits.value = clickedProperty.residential_units || 0;
+        const formResidents = document.getElementById('form_residents');
+        if (formResidents) formResidents.value = clickedProperty.estimated_residents || 0;
+        
+        const statUnits = document.getElementById('stat_units');
+        if (statUnits) statUnits.textContent = clickedProperty.residential_units || 0;
+        const statResidents = document.getElementById('stat_residents');
+        if (statResidents) statResidents.textContent = clickedProperty.estimated_residents || 0;
 
         const statOwner = document.getElementById('stat_owner');
         if (statOwner) statOwner.textContent = clickedProperty.owner || "Unknown";
