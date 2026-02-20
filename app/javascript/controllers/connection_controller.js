@@ -62,20 +62,46 @@ export default class extends Controller {
     }
   }
 
-  async handleOfflineSubmit(event) {
-    if (!navigator.onLine) {
-      event.preventDefault()
-      const form = event.target
-      const formData = new FormData(form)
-      const propertyId = form.action.split('/').pop()
+  async handleSubmit(event) {
+    // 1. ALWAYS stop the browser from leaving the map page!
+    event.preventDefault() 
+    
+    const form = event.target
+    const formData = new FormData(form) // This perfectly captures the photo file
+    const propertyId = form.action.split('/').pop()
 
+    if (!navigator.onLine) {
+      // OFFLINE MODE
       await SyncService.saveToOutbox(propertyId, formData)
-      
-      alert("Note saved locally! It will upload automatically when signal returns.")
-      
-      // Close the new slider card!
-      const card = document.getElementById("property_editor_card")
-      if (card) card.classList.add("translate-y-full") 
+      alert("Offline Mode: Note saved locally! It will upload automatically.")
+    } else {
+      // ONLINE MODE: Send it quietly in the background
+      try {
+        const csrfMetaTag = document.querySelector('meta[name="csrf-token"]')
+        const csrfToken = csrfMetaTag ? csrfMetaTag.content : ""
+        
+        const response = await fetch(form.action, {
+          method: 'PATCH',
+          headers: {
+            "X-CSRF-Token": csrfToken,
+            "Accept": "application/json" // Tells Rails NOT to redirect us
+          },
+          body: formData 
+        });
+
+        if (!response.ok) {
+          console.error("Server error during save.")
+          alert("Error saving to server. Please try again.")
+        }
+      } catch (e) {
+        // If the network drops exactly as they hit save, catch it!
+        console.error("Network failed during send, saving to outbox", e)
+        await SyncService.saveToOutbox(propertyId, formData)
+      }
     }
+
+    // Slide the card down seamlessly regardless of online/offline status
+    const card = document.getElementById("property_editor_card")
+    if (card) card.classList.add("translate-y-full") 
   }
 }
