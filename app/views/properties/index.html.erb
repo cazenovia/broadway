@@ -21,8 +21,7 @@
              # Safely grab the photo URL if it exists
              photo_url: p.photo.attached? ? rails_storage_proxy_path(p.photo, only_path: true) : nil,
              
-             # Bundle up the tickets into a lightweight array
-# Bundle up the tickets into a lightweight array WITH notes and photos!
+             # Bundle up the tickets into a lightweight array WITH notes and photos!
              tickets: p.tickets.map do |ticket|
                {
                  id: ticket.id,
@@ -37,6 +36,19 @@
                      date: note.created_at.strftime("%b %d, %I:%M %p")
                    }
                  end
+               }
+             end,
+
+             # Bundle up the contacts for the new tab!
+             contacts: p.contacts.order(contact_date: :desc).map do |contact|
+               {
+                 id: contact.id,
+                 display_date: contact.contact_date&.strftime("%b %d, %Y") || "Unknown Date",
+                 person: contact.contact_person,
+                 role: contact.contact_person_role,
+                 method: contact.contact_method,
+                 summary: contact.contact_summary,
+                 author: contact.user&.email&.split('@')&.first&.capitalize || "Unknown"
                }
              end
            },
@@ -57,6 +69,7 @@
   <div class="flex space-x-6 mb-5 border-b border-gray-200 shrink-0">
     <button id="tab_info" onclick="switchTab('info')" class="pb-3 border-b-2 border-blue-600 text-blue-600 font-bold text-sm transition-colors">Property Info</button>
     <button id="tab_tickets" onclick="switchTab('tickets')" class="pb-3 border-b-2 border-transparent text-gray-500 font-medium text-sm transition-colors hover:text-gray-800">Tickets (<span id="ticket_count">0</span>)</button>
+    <button id="tab_contacts" onclick="switchTab('contacts')" class="pb-3 border-b-2 border-transparent text-gray-500 font-medium text-sm transition-colors hover:text-gray-800">Contacts (<span id="contact_count">0</span>)</button>
   </div>
 
   <div class="overflow-y-auto flex-1 pb-6 pr-2 custom-scrollbar">
@@ -189,6 +202,106 @@
       </div>
     </div>
 
+    <div id="view_contacts_list" class="hidden space-y-4">
+      <button type="button" onclick="showNewContactForm()" class="w-full border-2 border-dashed border-emerald-300 text-emerald-600 bg-emerald-50 py-4 rounded-2xl font-bold hover:bg-emerald-100 transition-colors flex items-center justify-center">
+        <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        Log New Contact
+      </button>
+      <ul id="contacts_list" class="space-y-3 mt-4">
+      </ul>
+    </div>
+
+    <div id="view_contact_new" class="hidden space-y-5">
+      <button type="button" onclick="switchTab('contacts')" class="text-slate-500 hover:text-slate-800 text-sm font-bold flex items-center mb-1 transition-colors">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Contacts
+      </button>
+      <h3 class="font-black text-2xl text-slate-800 tracking-tight">Log a Contact</h3>
+      
+      <%= form_with(url: "", id: "contact_form", method: :post, class: "space-y-5", data: { turbo: false, action: "submit->connection#handleSubmit" }) do |f| %>
+        <input type="hidden" name="contact[property_id]" id="contact_property_id">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Contact Date</label>
+            <input type="date" name="contact[contact_date]" value="<%= Date.today %>" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 font-medium text-sm" required>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Contact Person</label>
+            <input type="text" name="contact[contact_person]" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 font-medium text-sm" placeholder="Name of person..." required>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Role</label>
+            <select name="contact[contact_person_role]" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 font-medium text-sm">
+              <option value="Owner">Owner</option>
+              <option value="Renter - Resident">Renter - Resident</option>
+              <option value="Renter - Business">Renter - Business</option>
+              <option value="Concerned Neighbor">Concerned Neighbor</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Method</label>
+            <select name="contact[contact_method]" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 font-medium text-sm">
+              <option value="Face to Face">Face to Face</option>
+              <option value="Phone">Phone</option>
+              <option value="Email">Email</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Summary</label>
+          <textarea name="contact[contact_summary]" rows="4" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 text-sm" placeholder="Provide details of the conversation..." required></textarea>
+        </div>
+
+        <div class="flex md:justify-end pt-2">
+          <button type="submit" class="w-full md:w-auto md:px-10 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-emerald-700 transition-transform active:scale-95">
+            Save Contact
+          </button>
+        </div>
+      <% end %>
+    </div>
+
+    <div id="view_contact_detail" class="hidden space-y-6">
+      <button type="button" onclick="switchTab('contacts')" class="text-slate-500 hover:text-slate-800 text-sm font-bold flex items-center mb-1 transition-colors">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Contacts
+      </button>
+      
+      <div class="bg-emerald-50 rounded-2xl p-5 border border-emerald-100">
+        <div class="flex justify-between items-start mb-2">
+          <h3 id="detail_contact_person" class="font-black text-2xl text-slate-800 leading-tight">Person Name</h3>
+          <span id="detail_contact_role" class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white shadow-sm ml-3 shrink-0 text-emerald-800 border border-emerald-200">ROLE</span>
+        </div>
+        <p id="detail_contact_meta" class="text-xs text-emerald-700 font-bold uppercase tracking-wider mb-1">Date • Method</p>
+        <p id="detail_contact_author" class="text-xs text-slate-500 font-semibold">Logged By: Author</p>
+      </div>
+
+      <div>
+        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Conversation Summary</h4>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p id="detail_contact_summary" class="text-sm text-slate-700 whitespace-pre-wrap font-medium leading-relaxed"></p>
+        </div>
+      </div>
+      
+      <div class="mt-8 pt-6 border-t border-slate-200">
+        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Append to Summary</h4>
+        <%= form_with(url: "", id: "contact_update_form", method: :patch, class: "space-y-4", data: { turbo: false, action: "submit->connection#handleSubmit" }) do |f| %>
+          <textarea name="contact[contact_summary]" id="detail_contact_summary_input" rows="3" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 text-sm" placeholder="Add more notes..." required></textarea>
+          <div class="flex justify-end pt-1">
+            <button type="submit" class="w-full md:w-auto md:px-8 bg-slate-800 text-white py-2.5 rounded-xl font-bold shadow-md hover:bg-slate-900 transition-transform active:scale-95 text-sm">
+              Save Update
+            </button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -198,38 +311,42 @@
   }
 
   function switchTab(tab) {
-    // 1. Reset Tab Styles
-    const inactiveClass = "pb-2 border-b-2 border-transparent text-gray-500 font-medium text-sm transition-colors hover:text-gray-700";
-    const activeClass = "pb-2 border-b-2 border-blue-600 text-blue-600 font-bold text-sm transition-colors";
+    const inactiveClass = "pb-3 border-b-2 border-transparent text-gray-500 font-medium text-sm transition-colors hover:text-gray-800";
+    const activeClass = "pb-3 border-b-2 border-blue-600 text-blue-600 font-bold text-sm transition-colors";
     
     document.getElementById('tab_info').className = inactiveClass;
     document.getElementById('tab_tickets').className = inactiveClass;
+    document.getElementById('tab_contacts').className = inactiveClass;
     
-    // 2. Hide all views
-    document.getElementById('view_info').classList.add('hidden');
-    document.getElementById('view_tickets_list').classList.add('hidden');
-    document.getElementById('view_ticket_new').classList.add('hidden');
+    // Hide ALL views aggressively
+    const allViews = ['view_info', 'view_tickets_list', 'view_ticket_new', 'view_ticket_detail', 'view_contacts_list', 'view_contact_new', 'view_contact_detail'];
+    allViews.forEach(v => {
+      const el = document.getElementById(v);
+      if(el) el.classList.add('hidden');
+    });
 
-    // 3. Activate selected tab & view
     if (tab === 'info') {
       document.getElementById('tab_info').className = activeClass;
       document.getElementById('view_info').classList.remove('hidden');
     } else if (tab === 'tickets') {
       document.getElementById('tab_tickets').className = activeClass;
       document.getElementById('view_tickets_list').classList.remove('hidden');
+    } else if (tab === 'contacts') {
+      document.getElementById('tab_contacts').className = activeClass;
+      document.getElementById('view_contacts_list').classList.remove('hidden');
     }
-    
-    // 4. Scroll to top
     document.getElementById('property_editor_card').scrollTop = 0;
-
-    // Manage full ticket view
-    document.getElementById('view_ticket_new').classList.add('hidden');
-    document.getElementById('view_ticket_detail').classList.add('hidden'); // Add this line!
   }
 
   function showNewTicketForm() {
     document.getElementById('view_tickets_list').classList.add('hidden');
     document.getElementById('view_ticket_new').classList.remove('hidden');
+    document.getElementById('property_editor_card').scrollTop = 0;
+  }
+
+  function showNewContactForm() {
+    document.getElementById('view_contacts_list').classList.add('hidden');
+    document.getElementById('view_contact_new').classList.remove('hidden');
     document.getElementById('property_editor_card').scrollTop = 0;
   }
 
@@ -243,12 +360,12 @@
     document.getElementById('detail_ticket_date').textContent = "Opened: " + ticket.date;
     document.getElementById('detail_ticket_author').textContent = "By: " + (ticket.author || "Unknown");
     document.getElementById('form_ticket_status').value = ticket.status.toLowerCase();
-    const propertyId = document.getElementById('ticket_property_id').value; // Borrow the ID from the new ticket form
+    const propertyId = document.getElementById('ticket_property_id').value; 
     document.getElementById('ticket_update_form').action = `/properties/${propertyId}/tickets/${ticket.id}`;
 
     const statusBadge = document.getElementById('detail_ticket_status');
     statusBadge.textContent = ticket.status;
-    statusBadge.className = ticket.status === 'open' 
+    statusBadge.className = ticket.status.toLowerCase() === 'open' 
       ? 'px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white shadow-sm ml-3 shrink-0' 
       : 'px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-100 text-green-800 ml-3 shrink-0';
 
@@ -287,6 +404,33 @@
     document.getElementById('view_tickets_list').classList.add('hidden');
     document.getElementById('view_ticket_new').classList.add('hidden');
     document.getElementById('view_ticket_detail').classList.remove('hidden');
+    document.getElementById('property_editor_card').scrollTop = 0;
+  }
+
+  function openContactDetail(contactId) {
+    if (!window.currentPropertyContacts) return;
+    const contact = window.currentPropertyContacts.find(c => c.id === contactId);
+    if (!contact) return;
+
+    document.getElementById('detail_contact_person').textContent = contact.person;
+    document.getElementById('detail_contact_role').textContent = contact.role;
+    document.getElementById('detail_contact_meta').textContent = `${contact.display_date} • ${contact.method}`;
+    document.getElementById('detail_contact_author').textContent = "Logged By: " + (contact.author || "Unknown");
+    
+    // Set the summary, but also plug it into the update textarea so they can just append to it!
+    document.getElementById('detail_contact_summary').textContent = contact.summary;
+    document.getElementById('detail_contact_summary_input').value = contact.summary + "\n\n-- Update: --\n";
+
+    const propertyId = document.getElementById('contact_property_id').value; 
+    document.getElementById('contact_update_form').action = `/properties/${propertyId}/contacts/${contact.id}`;
+
+    const allViews = ['view_info', 'view_tickets_list', 'view_ticket_new', 'view_ticket_detail', 'view_contacts_list', 'view_contact_new', 'view_contact_detail'];
+    allViews.forEach(v => {
+      const el = document.getElementById(v);
+      if(el) el.classList.add('hidden');
+    });
+    
+    document.getElementById('view_contact_detail').classList.remove('hidden');
     document.getElementById('property_editor_card').scrollTop = 0;
   }
 </script>

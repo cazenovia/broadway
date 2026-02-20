@@ -51,34 +51,28 @@ export default class extends Controller {
         }
       });
 
-      // THE CLICK HANDLER
       this.map.on('click', 'parcel-fills', (e) => {
         const clickedProperty = e.features[0].properties;
 
+        // 1. POPULATE PROPERTY ATTRIBUTES
         const form = document.getElementById('property_form');
         if (form) form.action = `/properties/${clickedProperty.id}`;
 
         const addressEl = document.getElementById('form_address');
         if (addressEl) addressEl.textContent = clickedProperty.address || "Unknown Address";
-        
         const usageEl = document.getElementById('form_usage_type');
         if (usageEl) usageEl.value = clickedProperty.usage_type || "Residential";
-        
         const notesEl = document.getElementById('form_notes');
         if (notesEl) notesEl.value = clickedProperty.notes || "";
-        
         const photoEl = document.getElementById('form_photo');
         if (photoEl) photoEl.value = ""; 
 
         const statOwner = document.getElementById('stat_owner');
         if (statOwner) statOwner.textContent = clickedProperty.owner || "Unknown";
-        
         const statPrice = document.getElementById('stat_price');
         if (statPrice) statPrice.textContent = clickedProperty.sale_price || "N/A";
-        
         const statDate = document.getElementById('stat_date');
         if (statDate) statDate.textContent = clickedProperty.sale_date || "Unknown";
-        
         const statYear = document.getElementById('stat_year');
         if (statYear) statYear.textContent = clickedProperty.year_built || "Unknown";
 
@@ -94,55 +88,80 @@ export default class extends Controller {
           }
         }
 
+        // 2. POPULATE TICKETS
         const ticketsList = document.getElementById('tickets_list');
         let tickets = [];
-        
         if (ticketsList) {
           ticketsList.innerHTML = "";
-          
           try {
-            // Mapbox sometimes parses JSON arrays automatically, sometimes leaves them as strings
             tickets = typeof clickedProperty.tickets === "string" ? JSON.parse(clickedProperty.tickets) : clickedProperty.tickets || [];
-          } catch(err) {
-            console.error("Error parsing tickets:", err);
-          }
+          } catch(err) { console.error(err); }
           
           if (tickets.length === 0) {
-            ticketsList.innerHTML = '<li class="text-sm text-gray-500 italic p-2">No active tickets.</li>';
+            ticketsList.innerHTML = '<li class="text-sm text-slate-500 italic p-2">No active tickets.</li>';
           } else {
-            // Make tickets globally accessible for the detail view script!
             window.currentPropertyTickets = tickets; 
-            
             tickets.forEach(ticket => {
-              const badgeColor = ticket.status === 'open' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
-              // Added cursor-pointer, hover styling, and the onclick trigger!
+              const badgeColor = ticket.status.toLowerCase() === 'open' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
               ticketsList.innerHTML += `
-                <li onclick="openTicketDetail(${ticket.id})" class="cursor-pointer hover:bg-blue-50 flex justify-between items-center p-3 mb-2 bg-white border border-gray-200 rounded-lg shadow-sm transition-colors">
+                <li onclick="openTicketDetail(${ticket.id})" class="cursor-pointer hover:bg-slate-50 flex justify-between items-center p-4 mb-3 bg-white border border-slate-200 rounded-2xl shadow-sm transition-transform active:scale-[0.98]">
                   <div>
-                    <p class="text-sm font-bold text-gray-800">${ticket.title}</p>
-                    <p class="text-[10px] text-gray-500 font-medium">Opened: ${ticket.date} • ${ticket.notes ? ticket.notes.length : 0} Notes</p>
+                    <p class="text-sm font-bold text-slate-800">${ticket.title}</p>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Opened: ${ticket.date} • ${ticket.notes ? ticket.notes.length : 0} Notes</p>
                   </div>
-                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${badgeColor}">${ticket.status}</span>
+                  <span class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${badgeColor}">${ticket.status}</span>
                 </li>
               `;
             });
           }
         }
-
         const ticketForm = document.getElementById('ticket_form');
         if (ticketForm) {
           ticketForm.action = `/properties/${clickedProperty.id}/tickets`;
           const ticketPropId = document.getElementById('ticket_property_id');
           if (ticketPropId) ticketPropId.value = clickedProperty.id;
         }
-
-        // Update the Ticket Count Badge on the Tab
         const ticketCountEl = document.getElementById('ticket_count');
         if (ticketCountEl) ticketCountEl.textContent = tickets.length;
 
-        // Force the card back to the 'info' tab whenever a new property is clicked
+
+        // 3. POPULATE CONTACTS
+        const contactsList = document.getElementById('contacts_list');
+        let contacts = [];
+        if (contactsList) {
+          contactsList.innerHTML = "";
+          try {
+            contacts = typeof clickedProperty.contacts === "string" ? JSON.parse(clickedProperty.contacts) : clickedProperty.contacts || [];
+          } catch(err) { console.error(err); }
+
+          if (contacts.length === 0) {
+            contactsList.innerHTML = '<li class="text-sm text-slate-500 italic p-2">No contacts recorded.</li>';
+          } else {
+            window.currentPropertyContacts = contacts;
+            contacts.forEach(contact => {
+              contactsList.innerHTML += `
+                <li onclick="openContactDetail(${contact.id})" class="cursor-pointer hover:bg-slate-50 flex justify-between items-center p-4 mb-3 bg-white border border-slate-200 rounded-2xl shadow-sm transition-transform active:scale-[0.98]">
+                  <div>
+                    <p class="text-sm font-bold text-slate-800">${contact.person}</p>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">${contact.display_date} • ${contact.method}</p>
+                  </div>
+                  <span class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-800 border border-emerald-200">${contact.role}</span>
+                </li>
+              `;
+            });
+          }
+        }
+        const contactForm = document.getElementById('contact_form');
+        if (contactForm) {
+          contactForm.action = `/properties/${clickedProperty.id}/contacts`;
+          const contactPropId = document.getElementById('contact_property_id');
+          if (contactPropId) contactPropId.value = clickedProperty.id;
+        }
+        const contactCountEl = document.getElementById('contact_count');
+        if (contactCountEl) contactCountEl.textContent = contacts.length;
+
+        // Reset Card to initial state
         if (typeof switchTab === 'function') switchTab('info');
-        
         const card = document.getElementById('property_editor_card');
         if (card) card.classList.remove('translate-y-full');
       });

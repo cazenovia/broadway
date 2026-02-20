@@ -14,6 +14,7 @@ Rails.application.routes.draw do
 
   resources :properties do
     resources :tickets, only: [:create, :update]
+    resources :contacts, only: [:create, :update]
   end
 
 end
