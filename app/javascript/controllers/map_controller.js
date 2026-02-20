@@ -20,7 +20,46 @@ export default class extends Controller {
       zoom: 16 
     });
 
-    this.map.on('click', 'parcel-fills', (e) => {
+    this.map.on('load', () => {
+      console.log("3. Base map loaded! Drawing shapes...");
+      
+      this.map.addSource('broadway-parcels', {
+        type: 'geojson',
+        data: this.propertiesValue
+      });
+
+      // Draw the colored outlines based on usage_type
+      this.map.addLayer({
+        id: 'parcel-fills',
+        type: 'fill',
+        source: 'broadway-parcels',
+        paint: {
+          'fill-color': [
+            'match',
+            ['get', 'usage_type'],    // Look at the usage_type property
+            'Retail', '#10B981',      // Green for Retail
+            'Residential', '#3B82F6', // Blue for Residential
+            'Vacant', '#EF4444',      // Red for Vacant
+            'Public', '#8B5CF6',      // Purple for Public
+            '#9CA3AF'                 // Gray for anything else
+          ],
+          'fill-opacity': 0.6
+        }
+      });
+
+      // Draw high-visibility BLACK borders
+      this.map.addLayer({
+        id: 'parcel-borders',
+        type: 'line',
+        source: 'broadway-parcels',
+        paint: {
+          'line-color': '#000000',
+          'line-width': 2
+        }
+      });
+
+      // THE NEW CLICK HANDLER
+      this.map.on('click', 'parcel-fills', (e) => {
         const clickedProperty = e.features[0].properties;
 
         // 1. Set the form's destination URL dynamically
@@ -28,7 +67,6 @@ export default class extends Controller {
         if (form) form.action = `/properties/${clickedProperty.id}`;
 
         // 2. Inject the data into the HTML fields
-        // (Using standard DOM methods to update the hidden template)
         const addressEl = document.getElementById('form_address');
         if (addressEl) addressEl.textContent = clickedProperty.address || "Unknown Address";
         
@@ -44,22 +82,6 @@ export default class extends Controller {
         // 3. Slide the card up onto the screen
         const card = document.getElementById('property_editor_card');
         if (card) card.classList.remove('translate-y-full');
-      });
-      // Draw high-visibility BLACK borders
-      this.map.addLayer({
-        id: 'parcel-borders',
-        type: 'line',
-        source: 'broadway-parcels',
-        paint: {
-          'line-color': '#000000',
-          'line-width': 2
-        }
-      });
-
-      this.map.on('click', 'parcel-fills', (e) => {
-        const clickedProperty = e.features[0].properties;
-        const frame = document.getElementById("property_editor");
-        frame.src = `/properties/${clickedProperty.id}/edit`;
       });
 
       this.map.on('mouseenter', 'parcel-fills', () => {
