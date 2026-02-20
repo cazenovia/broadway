@@ -19,7 +19,7 @@
              sale_date: p.sale_date ? p.sale_date.strftime("%b %d, %Y") : "Unknown",
              
              # Safely grab the photo URL if it exists
-             photo_url: p.photo.attached? ? rails_blob_path(p.photo, only_path: true) : nil,
+             photo_url: p.photo.attached? ? rails_storage_proxy_path(p.photo, only_path: true) : nil,
              
              # Bundle up the tickets into a lightweight array
              tickets: p.tickets.map do |ticket|
