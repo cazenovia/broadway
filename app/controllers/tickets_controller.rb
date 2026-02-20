@@ -2,12 +2,6 @@ class TicketsController < ApplicationController
   def create
     @property = Property.find(params[:property_id])
     
-    # Safely grab a user. If the dummy worker doesn't exist, just grab the very first user in the DB!
-    current_user = User.find_or_create_by!(email: "worker@broadway.app") do |u|
-      # If your User model requires a password, we provide a dummy one here
-      u.password = "password123" if u.respond_to?(:password=)
-    end
-    
     @ticket = @property.tickets.build(ticket_params)
     @ticket.user = current_user
     @ticket.status = "open" if @ticket.status.blank? # Provide a default status!
@@ -33,10 +27,7 @@ class TicketsController < ApplicationController
 
   def update
     @ticket = Ticket.find(params[:id])
-    
-    # Grab our dummy user again
-    current_user = User.find_by(email: "worker@broadway.app") || User.first
-    
+        
     # Update the status if they changed it
     @ticket.status = params.dig(:ticket, :status) if params.dig(:ticket, :status).present?
     

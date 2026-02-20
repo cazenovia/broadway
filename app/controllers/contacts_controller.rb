@@ -1,10 +1,7 @@
 class ContactsController < ApplicationController
   def create
     @property = Property.find(params[:property_id])
-    
-    # Grab our dummy user 
-    current_user = User.find_by(email: "worker@broadway.app") || User.first
-    
+        
     @contact = @property.contacts.build(contact_params)
     @contact.user = current_user
     

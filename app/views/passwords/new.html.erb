@@ -1,17 +1,27 @@
-<div class="mx-auto md:w-2/3 w-full">
-  <% if alert = flash[:alert] %>
-    <p class="py-2 px-3 bg-red-50 mb-5 text-red-500 font-medium rounded-lg inline-block" id="alert"><%= alert %></p>
-  <% end %>
-
-  <h1 class="font-bold text-4xl">Forgot your password?</h1>
-
-  <%= form_with url: passwords_path, class: "contents" do |form| %>
-    <div class="my-5">
-      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], class: "block shadow-sm rounded-md border border-gray-400 focus:outline-solid focus:outline-blue-600 px-3 py-2 mt-2 w-full" %>
+<div class="min-h-screen flex items-center justify-center bg-slate-50 px-4 -mt-16">
+  <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+    <div class="mb-8">
+      <%= link_to "&larr; Back to Login".html_safe, new_session_path, class: "text-slate-400 hover:text-slate-600 text-sm font-bold transition-colors mb-4 inline-block" %>
+      <h2 class="text-2xl font-black text-slate-800 tracking-tight">Forgot password?</h2>
+      <p class="text-slate-500 text-sm font-medium mt-2">Enter your email address and we will send you a link to reset your password.</p>
     </div>
 
-    <div class="inline">
-      <%= form.submit "Email reset instructions", class: "w-full sm:w-auto text-center rounded-lg px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
-    </div>
-  <% end %>
+    <%= form_with url: passwords_path, class: "space-y-6" do |form| %>
+      <div>
+        <%= form.label :email_address, "Email Address", class: "block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide" %>
+        <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", class: "w-full rounded-xl border-slate-300 bg-slate-50 p-3.5 shadow-sm focus:ring-blue-500 focus:border-blue-500 font-medium text-sm" %>
+      </div>
+
+      <% if alert %>
+        <p class="text-red-600 text-sm font-bold bg-red-50 p-3 rounded-xl border border-red-100 text-center"><%= alert %></p>
+      <% end %>
+      <% if notice %>
+        <p class="text-emerald-600 text-sm font-bold bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-center"><%= notice %></p>
+      <% end %>
+
+      <button type="submit" class="w-full bg-slate-800 text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-slate-900 transition-transform active:scale-95 text-base">
+        Email Reset Link
+      </button>
+    <% end %>
+  </div>
 </div>
