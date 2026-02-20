@@ -13,7 +13,7 @@ Rails.application.routes.draw do
   root "properties#index"
 
   resources :properties do
-    resources :tickets, only: [:create]
+    resources :tickets, only: [:create, :update]
   end
 
 end

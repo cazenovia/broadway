@@ -31,6 +31,31 @@ class TicketsController < ApplicationController
     end
   end
 
+  def update
+    @ticket = Ticket.find(params[:id])
+    
+    # Grab our dummy user again
+    current_user = User.find_by(email: "worker@broadway.app") || User.first
+    
+    # Update the status if they changed it
+    @ticket.status = params.dig(:ticket, :status) if params.dig(:ticket, :status).present?
+    
+    if @ticket.save
+      # If they typed a new note in the update form, attach it to the timeline!
+      if params[:ticket_note] && params[:ticket_note][:body].present?
+        @ticket.ticket_notes.create!(
+          body: params[:ticket_note][:body],
+          user: current_user
+        )
+      end
+
+      render json: { status: "success", message: "Ticket updated!" }, status: :ok
+    else
+      Rails.logger.error "❌ TICKET UPDATE FAILED: #{@ticket.errors.full_messages} ❌"
+      render json: { errors: @ticket.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def ticket_params
