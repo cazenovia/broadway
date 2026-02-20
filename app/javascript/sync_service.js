@@ -1,6 +1,5 @@
 import Dexie from "dexie"
 
-// Define the local database
 const db = new Dexie('BroadwayOfflineDB');
 db.version(1).stores({
   outbox: '++id, propertyId, status' // auto-incrementing ID
@@ -13,7 +12,7 @@ export const SyncService = {
       propertyId: propertyId,
       usage_type: formData.get('property[usage_type]'),
       notes: formData.get('property[notes]'),
-      photo: formData.get('property[photo]'), // Large files are fine in IndexedDB!
+      photo: formData.get('property[photo]'),
       timestamp: new Date().toISOString(),
       status: 'pending'
     };
@@ -21,34 +20,45 @@ export const SyncService = {
   },
 
   // Send all pending items to the Rails server
-  async syncOutbox() {
-    const pending = await db.outbox.where('status').equals('pending').toArray();
-    if (pending.length === 0) return;
+  async syncOutbox() { 
+    const items = await db.outbox.toArray();
+    if (items.length === 0) return;
 
-    console.log(`Syncing ${pending.length} items...`);
+    console.log(`Syncing ${items.length} items...`);
+    
+    // Grab the security token from the webpage's <head> safely
+    const csrfMetaTag = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfMetaTag ? csrfMetaTag.content : "";
 
-    for (const item of pending) {
-      const formData = new FormData();
-      formData.append('property[usage_type]', item.usage_type);
-      formData.append('property[notes]', item.notes);
-      if (item.photo) formData.append('property[photo]', item.photo);
-
+    for (const item of items) {
       try {
+        // 2. Reconstruct the FormData object so Rails understands it
+        const formData = new FormData();
+        if (item.usage_type) formData.append('property[usage_type]', item.usage_type);
+        if (item.notes) formData.append('property[notes]', item.notes);
+        
+        // Only append the photo if a real file was attached
+        if (item.photo && item.photo.name) {
+          formData.append('property[photo]', item.photo);
+        }
+
         const response = await fetch(`/properties/${item.propertyId}`, {
           method: 'PATCH',
-          body: formData,
           headers: {
-            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'text/vnd.turbo-stream.html'
-          }
+            "X-CSRF-Token": csrfToken,
+            "Accept": "text/vnd.turbo-stream.html, text/html, application/json"
+          },
+          body: formData // Send the rebuilt FormData
         });
 
         if (response.ok) {
           await db.outbox.delete(item.id);
-          console.log(`Property ${item.propertyId} synced!`);
+        } else {
+          console.error(`Failed to sync property ${item.propertyId}: Server returned ${response.status}`);
         }
-      } catch (err) {
-        console.error("Sync failed for item", item.id, err);
+      } catch (error) {
+        console.error("Sync failed, device might still be offline.", error);
+        break; // Stop trying if the network failed
       }
     }
   }
