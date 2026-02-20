@@ -2,11 +2,12 @@ class TicketsController < ApplicationController
   def create
     @property = Property.find(params[:property_id])
     
-    # We grab our dummy user since we haven't built authentication yet!
-    current_user = User.find_by(email: "worker@broadway.app")
+    # Safely grab a user. If the dummy worker doesn't exist, just grab the very first user in the DB!
+    current_user = User.find_by(email: "worker@broadway.app") || User.first
     
     @ticket = @property.tickets.build(ticket_params)
     @ticket.user = current_user
+    @ticket.status = "open" if @ticket.status.blank? # Provide a default status!
     
     if @ticket.save
       # If they typed an initial note, create the TicketNote record
@@ -20,6 +21,9 @@ class TicketsController < ApplicationController
       # Reply to the JavaScript fetch request with a pure JSON success
       render json: { status: "success", message: "Ticket created!" }, status: :created
     else
+      # 🚨 THE TRIPWIRE: Print the exact database validation error to the logs! 🚨
+      Rails.logger.error "❌ TICKET SAVE FAILED: #{@ticket.errors.full_messages} ❌"
+      
       render json: { errors: @ticket.errors.full_messages }, status: :unprocessable_entity
     end
   end
@@ -27,7 +31,6 @@ class TicketsController < ApplicationController
   private
 
   def ticket_params
-    # Notice we permit an array of photos [] so users can upload multiple!
     params.expect(ticket: [ :title, photos: [] ])
   end
 end
