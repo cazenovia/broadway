@@ -36,14 +36,27 @@ class PropertiesController < ApplicationController
 
 # PATCH/PUT /properties/1 or /properties/1.json
   def update
+    Rails.logger.warn "🚨 === UPDATE TRIGGERED FOR PROPERTY #{@property.id} === 🚨"
+    Rails.logger.warn "📥 RAW PARAMS RECEIVED: #{params[:property].inspect}"
+    
+    if params.dig(:property, :photo).present?
+      file = params[:property][:photo]
+      Rails.logger.warn "📸 PHOTO DETECTED IN PAYLOAD! Class: #{file.class}"
+      Rails.logger.warn "📸 Name: #{file.original_filename} | Size: #{file.size} bytes" if file.respond_to?(:size)
+    else
+      Rails.logger.warn "👻 NO PHOTO DETECTED IN PAYLOAD (This is good if we didn't upload one!)"
+    end
+
+    safe_params = property_params
+    Rails.logger.warn "🛡️ PARAMS AFTER GATEKEEPER: #{safe_params.inspect}"
+
     respond_to do |format|
-      if @property.update(property_params)
-        # Standard web traffic gets redirected normally
+      if @property.update(safe_params)
+        Rails.logger.warn "✅ DB UPDATE SUCCESSFUL"
         format.html { redirect_to property_url(@property), notice: "Property was successfully updated." }
-        
-        # Our iPad JS fetch gets a pure, crash-free JSON success message!
         format.json { render json: { status: "success", message: "Property updated!" }, status: :ok }
       else
+        Rails.logger.warn "❌ DB UPDATE FAILED: #{@property.errors.full_messages}"
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: { errors: @property.errors.full_messages }, status: :unprocessable_entity }
       end
@@ -68,11 +81,14 @@ class PropertiesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def property_params
-      params.expect(property: [ :address, :owner_name, :zoning, :usage_type, :notes, :photo ])
-
+      p = params.expect(property: [ :address, :owner_name, :zoning, :usage_type, :notes, :photo ])
+      
+      # The Gatekeeper
       if p[:photo].blank? || (p[:photo].respond_to?(:size) && p[:photo].size == 0)
+        Rails.logger.warn "🗑️ GATEKEEPER TRIGGERED: Trashing empty photo parameter!"
         p.delete(:photo)
       end
-
+      
+      p
     end
 end
