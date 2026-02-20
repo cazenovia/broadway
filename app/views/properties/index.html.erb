@@ -62,7 +62,7 @@
   <div class="overflow-y-auto flex-1 pb-6 pr-2 custom-scrollbar">
     
     <div id="view_info" class="space-y-6">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm text-sm">
+      <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm text-sm">
         <div><span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-0.5">Owner</span><span id="stat_owner" class="font-semibold text-slate-800 truncate block"></span></div>
         <div><span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-0.5">Sale Price</span><span id="stat_price" class="font-semibold text-slate-800"></span></div>
         <div><span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-0.5">Sale Date</span><span id="stat_date" class="font-semibold text-slate-800"></span></div>
@@ -70,7 +70,7 @@
       </div>
 
       <div id="photo_container" class="hidden">
-        <img id="display_photo" src="" class="w-full h-64 md:h-80 object-contain bg-slate-100 rounded-2xl border border-slate-200">
+        <img id="display_photo" src="" class="w-full h-64 md:h-80 object-contain md:w[50] bg-slate-100 rounded-2xl border border-slate-200">
       </div>
 
       <%= form_with(url: "", id: "property_form", method: :patch, html: { multipart: true }, class: "space-y-5", data: { turbo: false, action: "submit->connection#handleSubmit" }) do |f| %>
@@ -174,7 +174,7 @@
               <textarea name="ticket_note[body]" rows="2" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm" placeholder="Add a new note..."></textarea>
             </div>
             <div>
-              <select name="ticket[status]" id="form_ticket_status" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 font-medium text-sm h-full">
+              <select name="ticket[status]" id="form_ticket_status" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 font-medium text-sm">
                 <option value="open">Open</option>
                 <option value="closed">Closed</option>
               </select>
