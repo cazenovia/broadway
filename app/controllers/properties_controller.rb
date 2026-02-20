@@ -37,13 +37,10 @@ class PropertiesController < ApplicationController
   # PATCH/PUT /properties/1 or /properties/1.json
   def update
     if @property.update(property_params)
-      # If the request came from our background JavaScript
       if request.headers["Accept"].to_s.include?("application/json") || request.format.json?
         
-        # Use url_for() inside controllers, it safely returns the full path!
-        new_url = @property.photo.attached? ? url_for(@property.photo) : nil
-        
-        render json: { status: "success", new_photo_url: new_url }, status: :ok
+        # Strip out the URL generation to avoid the S3 race condition!
+        render json: { status: "success", message: "Property updated!" }, status: :ok
       else
         redirect_to property_url(@property), notice: "Property was successfully updated."
       end

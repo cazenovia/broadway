@@ -95,37 +95,17 @@ export default class extends Controller {
         });
 
         if (response.ok) {
-          // Parse the JSON success message from Rails
-          const data = await response.json();
-          
-          // 1. Update the photo immediately in the UI (keeps it visually smooth)
-          const displayPhoto = document.getElementById('display_photo');
-          const photoContainer = document.getElementById('photo_container');
-          if (displayPhoto && data.new_photo_url) {
-            displayPhoto.src = data.new_photo_url;
-            photoContainer.classList.remove('hidden');
-          }
-          
-          // 2. Slide the card down
+          // 1. Slide the card down immediately so the user knows it worked
           const card = document.getElementById("property_editor_card")
           if (card) card.classList.add("translate-y-full") 
 
-          // 3. Hard-refresh the page to update Mapbox's GeoJSON memory!
+          // 2. Hard-refresh the page to update Mapbox and grab the new S3 photo!
           window.location.reload(); 
 
         } else {
           console.error("Server error during save.")
           alert("Error saving to server. Please try again.")
         }
-      } catch (e) {
-        // If the network drops exactly as they hit save, catch it!
-        console.error("Network failed during send, saving to outbox", e)
-        await SyncService.saveToOutbox(propertyId, formData)
-        
-        // Slide the card down
-        const card = document.getElementById("property_editor_card")
-        if (card) card.classList.add("translate-y-full") 
-      }
     }
   }
 }
