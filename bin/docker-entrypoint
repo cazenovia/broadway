@@ -15,7 +15,7 @@ if [ "${1}" == "./bin/thrust" ] || ([ "${1}" == "./bin/rails" ] && [ "${2}" == "
   
   echo "🗄️ Running database migrations..."
   # CHANGED: Use migrate instead of prepare to bypass Render permission bugs
-  ./bin/rails db:migrate
+  ./bin/rails db:prepare
 
 fi
 
