@@ -67,6 +67,11 @@ export default class extends Controller {
     const formData = new FormData(form) 
     const propertyId = form.action.split('/').pop()
 
+    const photoInput = form.querySelector('input[type="file"]')
+    if (photoInput && photoInput.files.length === 0) {
+      formData.delete('property[photo]')
+    }
+    
     if (!navigator.onLine) {
       // OFFLINE MODE
       await SyncService.saveToOutbox(propertyId, formData)
