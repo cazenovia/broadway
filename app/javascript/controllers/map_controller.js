@@ -86,10 +86,7 @@ export default class extends Controller {
         const displayPhoto = document.getElementById('display_photo');
         if (photoContainer && displayPhoto) {
           if (clickedProperty.photo_url) {
-            // CACHE-BUSTER: Force Safari to fetch the real image instead of a broken cache!
-            const separator = clickedProperty.photo_url.includes('?') ? '&' : '?';
-            displayPhoto.src = clickedProperty.photo_url + separator + "cb=" + new Date().getTime();
-            
+            displayPhoto.src = clickedProperty.photo_url;
             photoContainer.classList.remove('hidden');
           } else {
             displayPhoto.src = "";
@@ -98,10 +95,11 @@ export default class extends Controller {
         }
 
         const ticketsList = document.getElementById('tickets_list');
+        let tickets = [];
+        
         if (ticketsList) {
           ticketsList.innerHTML = "";
           
-          let tickets = [];
           try {
             // Mapbox sometimes parses JSON arrays automatically, sometimes leaves them as strings
             tickets = typeof clickedProperty.tickets === "string" ? JSON.parse(clickedProperty.tickets) : clickedProperty.tickets || [];
@@ -134,8 +132,12 @@ export default class extends Controller {
           if (ticketPropId) ticketPropId.value = clickedProperty.id;
         }
 
-        // Trigger the global view toggle function from the HTML
-        if (typeof toggleViews === 'function') toggleViews('view_main');
+        // Update the Ticket Count Badge on the Tab
+        const ticketCountEl = document.getElementById('ticket_count');
+        if (ticketCountEl) ticketCountEl.textContent = tickets.length;
+
+        // Force the card back to the 'info' tab whenever a new property is clicked
+        if (typeof switchTab === 'function') switchTab('info');
         
         const card = document.getElementById('property_editor_card');
         if (card) card.classList.remove('translate-y-full');
