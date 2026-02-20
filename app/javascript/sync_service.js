@@ -42,14 +42,14 @@ export const SyncService = {
           formData.append('property[photo]', item.photo);
         }
 
-        const response = await fetch(`/properties/${item.propertyId}`, {
+        const response = await fetch(`/properties/${item.propertyId}.json`, {
           method: 'PATCH',
-          credentials: 'same-origin', // <-- ADD THIS LINE HERE TOO!
+          credentials: 'same-origin',
           headers: {
             "X-CSRF-Token": csrfToken,
             "Accept": "text/vnd.turbo-stream.html, text/html, application/json"
           },
-          body: formData
+          body: formData 
         });
 
         if (response.ok) {

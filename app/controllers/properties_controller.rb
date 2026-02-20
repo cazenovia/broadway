@@ -34,18 +34,19 @@ class PropertiesController < ApplicationController
     end
   end
 
-  # PATCH/PUT /properties/1 or /properties/1.json
+# PATCH/PUT /properties/1 or /properties/1.json
   def update
-    if @property.update(property_params)
-      if request.headers["Accept"].to_s.include?("application/json") || request.format.json?
+    respond_to do |format|
+      if @property.update(property_params)
+        # Standard web traffic gets redirected normally
+        format.html { redirect_to property_url(@property), notice: "Property was successfully updated." }
         
-        # Strip out the URL generation to avoid the S3 race condition!
-        render json: { status: "success", message: "Property updated!" }, status: :ok
+        # Our iPad JS fetch gets a pure, crash-free JSON success message!
+        format.json { render json: { status: "success", message: "Property updated!" }, status: :ok }
       else
-        redirect_to property_url(@property), notice: "Property was successfully updated."
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: { errors: @property.errors.full_messages }, status: :unprocessable_entity }
       end
-    else
-      render :edit, status: :unprocessable_entity
     end
   end
 

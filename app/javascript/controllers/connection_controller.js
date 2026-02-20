@@ -81,9 +81,12 @@ export default class extends Controller {
         const csrfMetaTag = document.querySelector('meta[name="csrf-token"]')
         const csrfToken = csrfMetaTag ? csrfMetaTag.content : ""
         
-        const response = await fetch(form.action, {
+        // FORCE Rails to treat this as an API request by appending .json
+        const actionUrl = form.action.endsWith('.json') ? form.action : form.action + '.json';
+        
+        const response = await fetch(actionUrl, {
           method: 'PATCH',
-          credentials: 'same-origin', // <-- THIS ALLOWS THE COOKIE TO PASS THROUGH!
+          credentials: 'same-origin', 
           headers: {
             "X-CSRF-Token": csrfToken,
             "Accept": "application/json"
@@ -99,7 +102,7 @@ export default class extends Controller {
           console.error("Server error during save.")
           alert("Error saving to server. Please try again.")
         }
-      } catch (e) { // <-- This was missing in your paste!
+      } catch (e) { 
         console.error("Network failed during send, saving to outbox", e)
         await SyncService.saveToOutbox(propertyId, formData)
         const card = document.getElementById("property_editor_card")
