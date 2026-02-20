@@ -36,15 +36,17 @@ class PropertiesController < ApplicationController
 
   # PATCH/PUT /properties/1 or /properties/1.json
   def update
-    respond_to do |format|
-      if @property.update(property_params)
-        format.html { redirect_to property_url(@property), notice: "Property was successfully updated." }
-        # Instead of looking for a view file, just reply with a raw JSON success message!
-        format.json { render json: { status: "success", message: "Property updated!" }, status: :ok }
+    if @property.update(property_params)
+      # If the request came from our background JavaScript
+      if request.headers["Accept"].to_s.include?("application/json") || request.format.json?
+        # Grab the brand new photo URL to send back to the iPad
+        new_url = @property.photo.attached? ? url_for(@property.photo) : nil
+        render json: { status: "success", new_photo_url: new_url }, status: :ok
       else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @property.errors, status: :unprocessable_entity }
+        redirect_to property_url(@property), notice: "Property was successfully updated."
       end
+    else
+      render :edit, status: :unprocessable_entity
     end
   end
 

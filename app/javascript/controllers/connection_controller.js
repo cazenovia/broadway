@@ -74,6 +74,11 @@ export default class extends Controller {
       // OFFLINE MODE
       await SyncService.saveToOutbox(propertyId, formData)
       alert("Offline Mode: Note saved locally! It will upload automatically.")
+      
+      // Slide the card down
+      const card = document.getElementById("property_editor_card")
+      if (card) card.classList.add("translate-y-full") 
+      
     } else {
       // ONLINE MODE: Send it quietly in the background
       try {
@@ -89,7 +94,26 @@ export default class extends Controller {
           body: formData 
         });
 
-        if (!response.ok) {
+        if (response.ok) {
+          // Parse the JSON success message from Rails
+          const data = await response.json();
+          
+          // 1. Update the photo immediately in the UI (keeps it visually smooth)
+          const displayPhoto = document.getElementById('display_photo');
+          const photoContainer = document.getElementById('photo_container');
+          if (displayPhoto && data.new_photo_url) {
+            displayPhoto.src = data.new_photo_url;
+            photoContainer.classList.remove('hidden');
+          }
+          
+          // 2. Slide the card down
+          const card = document.getElementById("property_editor_card")
+          if (card) card.classList.add("translate-y-full") 
+
+          // 3. Hard-refresh the page to update Mapbox's GeoJSON memory!
+          window.location.reload(); 
+
+        } else {
           console.error("Server error during save.")
           alert("Error saving to server. Please try again.")
         }
@@ -97,11 +121,11 @@ export default class extends Controller {
         // If the network drops exactly as they hit save, catch it!
         console.error("Network failed during send, saving to outbox", e)
         await SyncService.saveToOutbox(propertyId, formData)
+        
+        // Slide the card down
+        const card = document.getElementById("property_editor_card")
+        if (card) card.classList.add("translate-y-full") 
       }
     }
-
-    // Slide the card down seamlessly regardless of online/offline status
-    const card = document.getElementById("property_editor_card")
-    if (card) card.classList.add("translate-y-full") 
   }
 }
