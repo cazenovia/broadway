@@ -62,11 +62,11 @@ export default class extends Controller {
       this.map.on('click', 'parcel-fills', (e) => {
         const clickedProperty = e.features[0].properties;
 
-        // 1. Set the form's destination URL dynamically
+        // 1. Set the Property form destination
         const form = document.getElementById('property_form');
         if (form) form.action = `/properties/${clickedProperty.id}`;
 
-        // 2. Inject the data into the HTML fields
+        // 2. Inject standard form fields
         const addressEl = document.getElementById('form_address');
         if (addressEl) addressEl.textContent = clickedProperty.address || "Unknown Address";
         
@@ -77,19 +77,61 @@ export default class extends Controller {
         if (notesEl) notesEl.value = clickedProperty.notes || "";
         
         const photoEl = document.getElementById('form_photo');
-        if (photoEl) photoEl.value = ""; // Always clear the old photo input!
+        if (photoEl) photoEl.value = ""; 
 
-        // 3. Slide the card up onto the screen
+        // 3. Inject Read-Only Stats
+        document.getElementById('stat_owner').textContent = clickedProperty.owner || "Unknown";
+        document.getElementById('stat_price').textContent = clickedProperty.sale_price || "N/A";
+        document.getElementById('stat_date').textContent = clickedProperty.sale_date || "Unknown";
+        document.getElementById('stat_year').textContent = clickedProperty.year_built || "Unknown";
+
+        // 4. Handle Canonical Photo Display
+        const photoContainer = document.getElementById('photo_container');
+        const displayPhoto = document.getElementById('display_photo');
+        if (clickedProperty.photo_url) {
+          displayPhoto.src = clickedProperty.photo_url;
+          photoContainer.classList.remove('hidden');
+        } else {
+          displayPhoto.src = "";
+          photoContainer.classList.add('hidden');
+        }
+
+        // 5. Populate the Tickets List
+        const ticketsList = document.getElementById('tickets_list');
+        ticketsList.innerHTML = ""; // Clear out previous property's tickets
+        
+        // Safely parse the JSON string Mapbox creates
+        const tickets = JSON.parse(clickedProperty.tickets || "[]");
+        
+        if (tickets.length === 0) {
+          ticketsList.innerHTML = '<li class="text-sm text-gray-500 italic p-2">No active tickets.</li>';
+        } else {
+          tickets.forEach(ticket => {
+            // Give open tickets a yellow badge, resolved tickets a green badge
+            const badgeColor = ticket.status === 'open' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
+            ticketsList.innerHTML += `
+              <li class="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div>
+                  <p class="text-sm font-bold text-gray-800">${ticket.title}</p>
+                  <p class="text-[10px] text-gray-500 font-medium">Opened: ${ticket.date}</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${badgeColor}">${ticket.status}</span>
+              </li>
+            `;
+          });
+        }
+
+        // 6. Prep the New Ticket Form routing
+        const ticketForm = document.getElementById('ticket_form');
+        if (ticketForm) {
+          ticketForm.action = `/properties/${clickedProperty.id}/tickets`;
+          document.getElementById('ticket_property_id').value = clickedProperty.id;
+        }
+
+        // 7. Reset the view state and slide the card up
+        toggleViews('view_main');
         const card = document.getElementById('property_editor_card');
         if (card) card.classList.remove('translate-y-full');
       });
-
-      this.map.on('mouseenter', 'parcel-fills', () => {
-        this.map.getCanvas().style.cursor = 'pointer';
-      });
-      this.map.on('mouseleave', 'parcel-fills', () => {
-        this.map.getCanvas().style.cursor = '';
-      });
-    });
   }
 }
