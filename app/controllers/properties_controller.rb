@@ -40,8 +40,8 @@ class PropertiesController < ApplicationController
       # If the request came from our background JavaScript
       if request.headers["Accept"].to_s.include?("application/json") || request.format.json?
         
-        # USE RAILS_BLOB_PATH INSTEAD OF URL_FOR to prevent the 500 crash on Render
-        new_url = @property.photo.attached? ? rails_blob_path(@property.photo, only_path: true) : nil
+        # Use url_for() inside controllers, it safely returns the full path!
+        new_url = @property.photo.attached? ? url_for(@property.photo) : nil
         
         render json: { status: "success", new_photo_url: new_url }, status: :ok
       else
