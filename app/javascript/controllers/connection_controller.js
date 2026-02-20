@@ -65,15 +65,21 @@ export default class extends Controller {
     
     const form = event.target
     const formData = new FormData(form) 
-    const propertyId = form.action.split('/').pop()
+    
+    // 1. DYNAMIC URL & METHOD: Works for both Properties (PATCH) and Tickets (POST)
+    const baseAction = form.action;
+    const actionUrl = baseAction.endsWith('.json') ? baseAction : baseAction + '.json';
+    const method = (formData.get('_method') || form.method).toUpperCase();
 
-    // Clean out empty files
-    const photoInput = form.querySelector('input[type="file"]')
-    if (photoInput && photoInput.files.length === 0) {
-      formData.delete('property[photo]')
-    }
+    // 2. GENERIC GATEKEEPER: Clean out empty files from ANY file input
+    const fileInputs = form.querySelectorAll('input[type="file"]')
+    fileInputs.forEach(input => {
+      if (input.files.length === 0) {
+        formData.delete(input.name)
+      }
+    })
 
-    console.log("🚀 === INITIATING SAVE === 🚀")
+    console.log(`🚀 === INITIATING ${method} TO ${actionUrl} === 🚀`)
     for (let [key, value] of formData.entries()) {
       if (value instanceof File) {
         console.log(`📦 ${key}: FILE -> Name: "${value.name}", Size: ${value.size} bytes, Type: ${value.type}`)
@@ -84,8 +90,8 @@ export default class extends Controller {
 
     if (!navigator.onLine) {
       // OFFLINE MODE
-      await SyncService.saveToOutbox(propertyId, formData)
-      alert("Offline Mode: Note saved locally! It will upload automatically.")
+      await SyncService.saveToOutbox(actionUrl, method, formData)
+      alert("Offline Mode: Data saved locally! It will upload automatically.")
       
       const card = document.getElementById("property_editor_card")
       if (card) card.classList.add("translate-y-full") 
@@ -96,11 +102,8 @@ export default class extends Controller {
         const csrfMetaTag = document.querySelector('meta[name="csrf-token"]')
         const csrfToken = csrfMetaTag ? csrfMetaTag.content : ""
         
-        // FORCE Rails to treat this as an API request by appending .json
-        const actionUrl = form.action.endsWith('.json') ? form.action : form.action + '.json';
-        
         const response = await fetch(actionUrl, {
-          method: 'PATCH',
+          method: method,
           credentials: 'same-origin', 
           headers: {
             "X-CSRF-Token": csrfToken,
@@ -119,7 +122,7 @@ export default class extends Controller {
         }
       } catch (e) { 
         console.error("Network failed during send, saving to outbox", e)
-        await SyncService.saveToOutbox(propertyId, formData)
+        await SyncService.saveToOutbox(actionUrl, method, formData)
         const card = document.getElementById("property_editor_card")
         if (card) card.classList.add("translate-y-full") 
       }

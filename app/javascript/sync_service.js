@@ -1,18 +1,24 @@
 import Dexie from "dexie"
 
 const db = new Dexie('BroadwayOfflineDB');
-db.version(1).stores({
-  outbox: '++id, propertyId, status' // auto-incrementing ID
+// We bumped to version 2 to support our new generic payload format!
+db.version(2).stores({
+  outbox: '++id, url, method, status' 
 });
 
 export const SyncService = {
-  // Save a form to the browser for later
-  async saveToOutbox(propertyId, formData) {
+  // Save ANY form to the browser for later
+  async saveToOutbox(url, method, formData) {
+    // Convert FormData to an array of objects to safely store in IndexedDB
+    const payload = [];
+    for (const [key, value] of formData.entries()) {
+      payload.push({ key, value });
+    }
+
     const data = {
-      propertyId: propertyId,
-      usage_type: formData.get('property[usage_type]'),
-      notes: formData.get('property[notes]'),
-      photo: formData.get('property[photo]'),
+      url: url,
+      method: method,
+      payload: payload,
       timestamp: new Date().toISOString(),
       status: 'pending'
     };
@@ -32,18 +38,22 @@ export const SyncService = {
 
     for (const item of items) {
       try {
-        // 2. Reconstruct the FormData object so Rails understands it
         const formData = new FormData();
-        if (item.usage_type) formData.append('property[usage_type]', item.usage_type);
-        if (item.notes) formData.append('property[notes]', item.notes);
         
-        // Only append the photo if a real file was attached
-        if (item.photo && item.photo.name) {
-          formData.append('property[photo]', item.photo);
+        // Reconstruct the generic payload 
+        if (item.payload) {
+          item.payload.forEach(entry => formData.append(entry.key, entry.value));
+        } else {
+          // Fallback for any lingering V1 Property Update offline records
+          if (item.usage_type) formData.append('property[usage_type]', item.usage_type);
+          if (item.notes) formData.append('property[notes]', item.notes);
+          if (item.photo && item.photo.name) formData.append('property[photo]', item.photo);
+          item.url = `/properties/${item.propertyId}.json`;
+          item.method = 'PATCH';
         }
 
-        const response = await fetch(`/properties/${item.propertyId}.json`, {
-          method: 'PATCH',
+        const response = await fetch(item.url, {
+          method: item.method,
           credentials: 'same-origin',
           headers: {
             "X-CSRF-Token": csrfToken,
@@ -55,7 +65,7 @@ export const SyncService = {
         if (response.ok) {
           await db.outbox.delete(item.id);
         } else {
-          console.error(`Failed to sync property ${item.propertyId}: Server returned ${response.status}`);
+          console.error(`Failed to sync item ${item.id}: Server returned ${response.status}`);
         }
       } catch (error) {
         console.error("Sync failed, device might still be offline.", error);
