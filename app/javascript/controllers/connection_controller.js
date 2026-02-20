@@ -14,12 +14,11 @@ export default class extends Controller {
   async updateStatus() {
     console.log("Network change detected. Now:", navigator.onLine ? "Online" : "Offline")
     
-    // 1. Wipe the slate clean (remove all possible color classes)
+    // Wipe the slate clean
     this.badgeTarget.classList.remove("bg-gray-50", "border-gray-200", "bg-red-50", "border-red-200")
     this.iconTarget.classList.remove("bg-green-500", "bg-red-500", "animate-pulse")
     this.textTarget.classList.remove("text-gray-700", "text-red-700")
 
-    // 2. Apply the exact state we need
     if (navigator.onLine) {
       // ONLINE
       this.badgeTarget.classList.add("bg-gray-50", "border-gray-200")
@@ -44,7 +43,6 @@ export default class extends Controller {
       this.iconTarget.classList.add("bg-red-500")
       this.textTarget.textContent = "Offline"
       this.textTarget.classList.add("text-red-700")
-      
       this.spinnerTarget.classList.add("hidden")
     }
   }
@@ -63,11 +61,10 @@ export default class extends Controller {
   }
 
   async handleSubmit(event) {
-    // 1. ALWAYS stop the browser from leaving the map page!
     event.preventDefault() 
     
     const form = event.target
-    const formData = new FormData(form) // This perfectly captures the photo file
+    const formData = new FormData(form) 
     const propertyId = form.action.split('/').pop()
 
     if (!navigator.onLine) {
@@ -75,37 +72,39 @@ export default class extends Controller {
       await SyncService.saveToOutbox(propertyId, formData)
       alert("Offline Mode: Note saved locally! It will upload automatically.")
       
-      // Slide the card down
       const card = document.getElementById("property_editor_card")
       if (card) card.classList.add("translate-y-full") 
       
     } else {
-      // ONLINE MODE: Send it quietly in the background
+      // ONLINE MODE
       try {
         const csrfMetaTag = document.querySelector('meta[name="csrf-token"]')
         const csrfToken = csrfMetaTag ? csrfMetaTag.content : ""
         
         const response = await fetch(form.action, {
           method: 'PATCH',
+          credentials: 'same-origin', // <-- THIS ALLOWS THE COOKIE TO PASS THROUGH!
           headers: {
             "X-CSRF-Token": csrfToken,
-            "Accept": "application/json" // Tells Rails NOT to redirect us
+            "Accept": "application/json"
           },
           body: formData 
         });
 
         if (response.ok) {
-          // 1. Slide the card down immediately so the user knows it worked
           const card = document.getElementById("property_editor_card")
           if (card) card.classList.add("translate-y-full") 
-
-          // 2. Hard-refresh the page to update Mapbox and grab the new S3 photo!
           window.location.reload(); 
-
         } else {
           console.error("Server error during save.")
           alert("Error saving to server. Please try again.")
         }
+      } catch (e) { // <-- This was missing in your paste!
+        console.error("Network failed during send, saving to outbox", e)
+        await SyncService.saveToOutbox(propertyId, formData)
+        const card = document.getElementById("property_editor_card")
+        if (card) card.classList.add("translate-y-full") 
+      }
     }
   }
 }

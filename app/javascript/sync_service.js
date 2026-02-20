@@ -44,11 +44,12 @@ export const SyncService = {
 
         const response = await fetch(`/properties/${item.propertyId}`, {
           method: 'PATCH',
+          credentials: 'same-origin', // <-- ADD THIS LINE HERE TOO!
           headers: {
             "X-CSRF-Token": csrfToken,
             "Accept": "text/vnd.turbo-stream.html, text/html, application/json"
           },
-          body: formData // Send the rebuilt FormData
+          body: formData
         });
 
         if (response.ok) {
