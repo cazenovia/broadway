@@ -46,113 +46,122 @@
        }
      }.to_json %>'></div>
 
-<div id="property_editor_card" class="fixed bottom-0 left-0 right-0 z-[100] bg-white p-5 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)] transition-transform duration-300 transform translate-y-full w-full max-h-[85dvh] flex flex-col">
+<div id="property_editor_card" class="fixed bottom-0 left-0 right-0 md:left-1/2 md:right-auto md:-translate-x-1/2 w-full md:max-w-4xl z-[100] bg-white p-5 md:p-7 rounded-t-3xl md:rounded-t-[2rem] shadow-[0_-20px_60px_rgba(0,0,0,0.15)] transition-transform duration-300 transform translate-y-full h-[85dvh] flex flex-col">
 
   <div class="flex justify-between items-center mb-2 shrink-0">
-    <h2 id="form_address" class="text-xl font-bold text-gray-800 truncate">Property Address</h2>
-    <button type="button" onclick="closePropertyCard()" class="bg-gray-100 text-gray-600 rounded-full p-2 hover:bg-gray-200 shrink-0 ml-2">
+    <h2 id="form_address" class="text-2xl font-black text-gray-800 truncate tracking-tight">Property Address</h2>
+    <button type="button" onclick="closePropertyCard()" class="bg-gray-100 text-gray-600 rounded-full p-2 hover:bg-gray-200 shrink-0 ml-2 transition-colors">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
     </button>
   </div>
 
-  <div class="flex space-x-6 mb-4 border-b border-gray-200 shrink-0">
-    <button id="tab_info" onclick="switchTab('info')" class="pb-2 border-b-2 border-blue-600 text-blue-600 font-bold text-sm transition-colors">Property Info</button>
-    <button id="tab_tickets" onclick="switchTab('tickets')" class="pb-2 border-b-2 border-transparent text-gray-500 font-medium text-sm transition-colors hover:text-gray-700">Tickets (<span id="ticket_count">0</span>)</button>
+  <div class="flex space-x-6 mb-5 border-b border-gray-200 shrink-0">
+    <button id="tab_info" onclick="switchTab('info')" class="pb-3 border-b-2 border-blue-600 text-blue-600 font-bold text-sm transition-colors">Property Info</button>
+    <button id="tab_tickets" onclick="switchTab('tickets')" class="pb-3 border-b-2 border-transparent text-gray-500 font-medium text-sm transition-colors hover:text-gray-800">Tickets (<span id="ticket_count">0</span>)</button>
   </div>
 
-  <div class="overflow-y-auto flex-1 pb-4">
+  <div class="overflow-y-auto flex-1 pb-6 pr-2 custom-scrollbar">
     
-    <div id="view_info" class="space-y-5">
-      <div class="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-inner text-sm">
-        <div><span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider block">Owner</span><span id="stat_owner" class="font-medium text-gray-800 truncate block"></span></div>
-        <div><span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider block">Sale Price</span><span id="stat_price" class="font-medium text-gray-800"></span></div>
-        <div><span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider block">Sale Date</span><span id="stat_date" class="font-medium text-gray-800"></span></div>
-        <div><span class="text-gray-400 text-[10px] uppercase font-bold tracking-wider block">Year Built</span><span id="stat_year" class="font-medium text-gray-800"></span></div>
+    <div id="view_info" class="space-y-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm text-sm">
+        <div><span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-0.5">Owner</span><span id="stat_owner" class="font-semibold text-slate-800 truncate block"></span></div>
+        <div><span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-0.5">Sale Price</span><span id="stat_price" class="font-semibold text-slate-800"></span></div>
+        <div><span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-0.5">Sale Date</span><span id="stat_date" class="font-semibold text-slate-800"></span></div>
+        <div><span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-0.5">Year Built</span><span id="stat_year" class="font-semibold text-slate-800"></span></div>
       </div>
 
       <div id="photo_container" class="hidden">
-        <img id="display_photo" src="" class="w-full h-48 object-cover rounded-xl shadow-sm border border-gray-200">
+        <img id="display_photo" src="" class="w-full h-64 md:h-80 object-contain bg-slate-100 rounded-2xl border border-slate-200">
       </div>
 
-      <%= form_with(url: "", id: "property_form", method: :patch, html: { multipart: true }, class: "space-y-4", data: { turbo: false, action: "submit->connection#handleSubmit" }) do |f| %>
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Usage Type</label>
-          <select name="property[usage_type]" id="form_usage_type" class="w-full rounded-lg border-gray-300 bg-gray-50 p-2.5 text-sm shadow-sm">
-            <option value="Residential">Residential</option>
-            <option value="Commercial">Commercial</option>
-            <option value="Mixed-Use">Mixed-Use</option>
-            <option value="Vacant">Vacant</option>
-          </select>
+      <%= form_with(url: "", id: "property_form", method: :patch, html: { multipart: true }, class: "space-y-5", data: { turbo: false, action: "submit->connection#handleSubmit" }) do |f| %>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Usage Type</label>
+            <select name="property[usage_type]" id="form_usage_type" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500 font-medium">
+              <option value="Residential">Residential</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Mixed-Use">Mixed-Use</option>
+              <option value="Vacant">Vacant</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Replace Photo</label>
+            <input type="file" name="property[photo]" id="form_photo" accept="image/*" class="w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors" />
+          </div>
         </div>
+        
         <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Replace Photo</label>
-          <input type="file" name="property[photo]" id="form_photo" accept="image/*" class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700" />
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Field Notes</label>
+          <textarea name="property[notes]" id="form_notes" rows="3" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Enter notes here..."></textarea>
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Field Notes</label>
-          <textarea name="property[notes]" id="form_notes" rows="2" class="w-full rounded-lg border-gray-300 bg-gray-50 p-2.5 text-sm shadow-sm" placeholder="Enter notes here..."></textarea>
+        
+        <div class="flex md:justify-end pt-2">
+          <button type="submit" class="w-full md:w-auto md:px-10 bg-slate-800 text-white py-3 rounded-xl font-bold shadow-md hover:bg-slate-900 text-sm transition-transform active:scale-95">
+            Update Property Info
+          </button>
         </div>
-        <button type="submit" class="w-full bg-gray-800 text-white py-2.5 rounded-xl font-bold shadow-sm hover:bg-gray-900 text-sm">
-          Update Property Info
-        </button>
       <% end %>
     </div>
 
     <div id="view_tickets_list" class="hidden space-y-4">
-      <button type="button" onclick="showNewTicketForm()" class="w-full border-2 border-dashed border-blue-300 text-blue-600 bg-blue-50 py-3 rounded-xl font-bold hover:bg-blue-100 transition-colors flex items-center justify-center">
-        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+      <button type="button" onclick="showNewTicketForm()" class="w-full border-2 border-dashed border-blue-300 text-blue-600 bg-blue-50 py-4 rounded-2xl font-bold hover:bg-blue-100 transition-colors flex items-center justify-center">
+        <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
         Create New Ticket
       </button>
-      
-      <ul id="tickets_list" class="space-y-2 mt-2">
-        </ul>
+      <ul id="tickets_list" class="space-y-3 mt-4">
+      </ul>
     </div>
 
-    <div id="view_ticket_new" class="hidden space-y-4">
-      <button type="button" onclick="switchTab('tickets')" class="text-blue-600 text-sm font-semibold flex items-center mb-2">
-        &larr; Back to Ticket List
+    <div id="view_ticket_new" class="hidden space-y-5">
+      <button type="button" onclick="switchTab('tickets')" class="text-slate-500 hover:text-slate-800 text-sm font-bold flex items-center mb-1 transition-colors">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Tickets
       </button>
-      <h3 class="font-bold text-lg text-gray-800 border-b pb-2">Report an Issue</h3>
+      <h3 class="font-black text-2xl text-slate-800 tracking-tight">Report an Issue</h3>
       
-      <%= form_with(url: "", id: "ticket_form", method: :post, class: "space-y-4", data: { turbo: false, action: "submit->connection#handleSubmit" }) do |f| %>
+      <%= form_with(url: "", id: "ticket_form", method: :post, class: "space-y-5", data: { turbo: false, action: "submit->connection#handleSubmit" }) do |f| %>
         <input type="hidden" name="ticket[property_id]" id="ticket_property_id">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Issue Title</label>
-          <input type="text" name="ticket[title]" class="w-full rounded-lg border-gray-300 bg-gray-50 p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., Broken Window, High Grass" required>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Issue Title</label>
+          <input type="text" name="ticket[title]" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 font-medium" placeholder="e.g., Broken Window, High Grass" required>
         </div>
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Initial Note</label>
-          <textarea name="ticket_note[body]" rows="3" class="w-full rounded-lg border-gray-300 bg-gray-50 p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Provide details..."></textarea>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Initial Note</label>
+          <textarea name="ticket_note[body]" rows="3" class="w-full rounded-xl border-slate-300 bg-slate-50 p-3 shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Provide details..."></textarea>
         </div>
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Evidence Photos (Multiple)</label>
-          <input type="file" name="ticket[photos][]" multiple accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700" />
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Evidence Photos</label>
+          <input type="file" name="ticket[photos][]" multiple accept="image/*" class="w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
         </div>
-        <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all">
-          Save Ticket
-        </button>
+        <div class="flex md:justify-end pt-2">
+          <button type="submit" class="w-full md:w-auto md:px-10 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-transform active:scale-95">
+            Save Ticket
+          </button>
+        </div>
       <% end %>
     </div>
 
-    <div id="view_ticket_detail" class="hidden space-y-4">
-      <button type="button" onclick="switchTab('tickets')" class="text-blue-600 text-sm font-semibold flex items-center mb-2">
-        &larr; Back to Ticket List
+    <div id="view_ticket_detail" class="hidden space-y-6">
+      <button type="button" onclick="switchTab('tickets')" class="text-slate-500 hover:text-slate-800 text-sm font-bold flex items-center mb-1 transition-colors">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Tickets
       </button>
       
-      <div class="border-b border-gray-200 pb-3">
+      <div class="bg-blue-50 rounded-2xl p-5 border border-blue-100">
         <div class="flex justify-between items-start mb-2">
-          <h3 id="detail_ticket_title" class="font-bold text-lg text-gray-800 leading-tight">Ticket Title</h3>
-          <span id="detail_ticket_status" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-gray-100 ml-2 shrink-0">STATUS</span>
+          <h3 id="detail_ticket_title" class="font-black text-2xl text-slate-800 leading-tight">Ticket Title</h3>
+          <span id="detail_ticket_status" class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white shadow-sm ml-3 shrink-0">STATUS</span>
         </div>
-        <p id="detail_ticket_date" class="text-xs text-gray-500 font-medium">Opened: Date</p>
+        <p id="detail_ticket_date" class="text-xs text-blue-600 font-bold uppercase tracking-wider">Opened: Date</p>
       </div>
 
-      <div id="detail_ticket_photos" class="flex overflow-x-auto space-x-3 pb-2 hidden">
+      <div id="detail_ticket_photos" class="flex overflow-x-auto space-x-3 pb-2 hidden custom-scrollbar">
       </div>
 
       <div>
-        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Timeline</h4>
-        <div id="detail_ticket_notes" class="space-y-3">
+        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Activity Timeline</h4>
+        <div id="detail_ticket_notes" class="ml-2 border-l-2 border-slate-100 space-y-6">
         </div>
       </div>
     </div>
@@ -213,35 +222,38 @@
     const statusBadge = document.getElementById('detail_ticket_status');
     statusBadge.textContent = ticket.status;
     statusBadge.className = ticket.status === 'open' 
-      ? 'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-yellow-100 text-yellow-800 ml-2 shrink-0' 
-      : 'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-green-100 text-green-800 ml-2 shrink-0';
+      ? 'px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white shadow-sm ml-3 shrink-0' 
+      : 'px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-100 text-green-800 ml-3 shrink-0';
 
     // 2. Populate Photos
     const photosContainer = document.getElementById('detail_ticket_photos');
     photosContainer.innerHTML = '';
     if (ticket.photos && ticket.photos.length > 0) {
       ticket.photos.forEach(photoUrl => {
-        photosContainer.innerHTML += `<img src="${photoUrl}" class="h-24 w-24 object-cover rounded-lg shadow-sm border border-gray-200 shrink-0">`;
+        photosContainer.innerHTML += `<img src="${photoUrl}" class="h-24 w-24 object-cover rounded-lg shadow-sm border border-slate-200 shrink-0">`;
       });
       photosContainer.classList.remove('hidden');
     } else {
       photosContainer.classList.add('hidden');
     }
 
-    // 3. Populate Notes
+    // 3. Populate Notes (With Timeline UI!)
     const notesContainer = document.getElementById('detail_ticket_notes');
     notesContainer.innerHTML = '';
     if (ticket.notes && ticket.notes.length > 0) {
       ticket.notes.forEach(note => {
         notesContainer.innerHTML += `
-          <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
-            <p class="text-sm text-gray-800 whitespace-pre-wrap">${note.body}</p>
-            <p class="text-[10px] text-gray-400 mt-2 font-medium">${note.date}</p>
+          <div class="relative pl-6">
+            <div class="absolute -left-[5px] top-1.5 w-2.5 h-2.5 bg-blue-500 rounded-full ring-4 ring-white"></div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <p class="text-sm text-slate-700 whitespace-pre-wrap font-medium">${note.body}</p>
+              <p class="text-[10px] text-slate-400 mt-2.5 font-bold uppercase tracking-wider">${note.date}</p>
+            </div>
           </div>
         `;
       });
     } else {
-      notesContainer.innerHTML = '<p class="text-sm text-gray-500 italic">No notes on this ticket.</p>';
+      notesContainer.innerHTML = '<p class="text-sm text-slate-400 italic pl-6">No notes on this ticket.</p>';
     }
 
     // 4. Swap Views
