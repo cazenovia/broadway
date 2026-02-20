@@ -24,7 +24,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="h-screen flex flex-col overflow-hidden bg-gray-50" 
+  <body class="fixed inset-0 w-full h-[100dvh] flex flex-col overflow-hidden bg-gray-50" 
         data-controller="connection"
         data-action="online@window->connection#updateStatus offline@window->connection#updateStatus">
     
