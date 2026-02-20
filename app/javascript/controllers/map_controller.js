@@ -110,13 +110,17 @@ export default class extends Controller {
           if (tickets.length === 0) {
             ticketsList.innerHTML = '<li class="text-sm text-gray-500 italic p-2">No active tickets.</li>';
           } else {
+            // Make tickets globally accessible for the detail view script!
+            window.currentPropertyTickets = tickets; 
+            
             tickets.forEach(ticket => {
               const badgeColor = ticket.status === 'open' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
+              // Added cursor-pointer, hover styling, and the onclick trigger!
               ticketsList.innerHTML += `
-                <li class="flex justify-between items-center p-3 mb-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <li onclick="openTicketDetail(${ticket.id})" class="cursor-pointer hover:bg-blue-50 flex justify-between items-center p-3 mb-2 bg-white border border-gray-200 rounded-lg shadow-sm transition-colors">
                   <div>
                     <p class="text-sm font-bold text-gray-800">${ticket.title}</p>
-                    <p class="text-[10px] text-gray-500 font-medium">Opened: ${ticket.date}</p>
+                    <p class="text-[10px] text-gray-500 font-medium">Opened: ${ticket.date} • ${ticket.notes ? ticket.notes.length : 0} Notes</p>
                   </div>
                   <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${badgeColor}">${ticket.status}</span>
                 </li>
