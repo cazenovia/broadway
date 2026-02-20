@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_19_171830) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_20_025453) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "postgis"
@@ -57,6 +57,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_19_171830) do
     t.index ["boundary"], name: "index_properties_on_boundary", using: :gist
   end
 
+  create_table "ticket_notes", force: :cascade do |t|
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.bigint "ticket_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["ticket_id"], name: "index_ticket_notes_on_ticket_id"
+    t.index ["user_id"], name: "index_ticket_notes_on_user_id"
+  end
+
+  create_table "tickets", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "property_id", null: false
+    t.string "status", default: "open"
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["property_id"], name: "index_tickets_on_property_id"
+    t.index ["user_id"], name: "index_tickets_on_user_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "name"
+    t.datetime "updated_at", null: false
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "ticket_notes", "tickets"
+  add_foreign_key "ticket_notes", "users"
+  add_foreign_key "tickets", "properties"
+  add_foreign_key "tickets", "users"
 end
