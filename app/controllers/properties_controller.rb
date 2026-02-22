@@ -3,13 +3,11 @@ class PropertiesController < ApplicationController
 
   # GET /properties or /properties.json
   def index
-    # 1. Define the bounding box polygon using your four corners
-    bounding_box = RGeo::Geographic.spherical_factory(srid: 4326).parse_wkt(
-      "POLYGON((-76.5965 39.2843, -76.5965 39.2915, -76.5913 39.2915, -76.5913 39.2843, -76.5965 39.2843))"
-    )
+    # The raw string defining our District (Caroline to Ann, Eastern to Baltimore)
+    district_wkt = "POLYGON((-76.5965 39.2843, -76.5965 39.2915, -76.5913 39.2915, -76.5913 39.2843, -76.5965 39.2843))"
 
-    # 2. Filter by geography AND eager-load the associations to prevent N+1 queries
-    @properties = Property.where("ST_Intersects(boundary, ?)", bounding_box)
+    # Let PostGIS handle the geometry translation natively
+    @properties = Property.where("ST_Intersects(boundary, ST_GeomFromText(?, 4326))", district_wkt)
                           .with_attached_photo
                           .includes(:tickets, :contacts)
   end
