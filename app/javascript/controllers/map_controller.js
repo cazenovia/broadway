@@ -35,6 +35,7 @@ export default class extends Controller {
             'Residential', '#3B82F6',
             'Vacant', '#EF4444',
             'Mixed-Use', '#8B5CF6',
+            'Government', '#ebab00',
             '#9CA3AF'
           ],
           'fill-opacity': 0.6
