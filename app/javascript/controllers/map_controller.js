@@ -13,8 +13,12 @@ export default class extends Controller {
     this.map = new mapboxgl.Map({
       container: this.element,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: [-76.5938, 39.2865],
-      zoom: 16 
+      // Use the SW and NE corners to perfectly frame the district on load!
+      bounds: [
+        [-76.5965, 39.2843], // Southwest corner (Caroline & Eastern)
+        [-76.5913, 39.2915]  // Northeast corner (Ann & Baltimore)
+      ],
+      fitBoundsOptions: { padding: 50 } // Gives a nice 50px visual margin around the edges
     });
 
     this.map.on('load', () => {
