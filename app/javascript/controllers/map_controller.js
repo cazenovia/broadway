@@ -31,10 +31,10 @@ export default class extends Controller {
           'fill-color': [
             'match',
             ['get', 'usage_type'],
-            'Retail', '#10B981',
+            'Commercial', '#10B981',
             'Residential', '#3B82F6',
             'Vacant', '#EF4444',
-            'Public', '#8B5CF6',
+            'Mixed-Use', '#8B5CF6',
             '#9CA3AF'
           ],
           'fill-opacity': 0.6
