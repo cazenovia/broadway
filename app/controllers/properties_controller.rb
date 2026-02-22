@@ -4,8 +4,7 @@ class PropertiesController < ApplicationController
   # GET /properties or /properties.json
   def index
     # The raw string defining our District (Caroline to Ann, Eastern to Baltimore)
-    district_wkt = "POLYGON((-76.5965 39.2843, -76.5965 39.2915, -76.5913 39.2915, -76.5913 39.2843, -76.5965 39.2843))"
-
+    district_wkt = "POLYGON((-76.5965 39.2849, -76.5965 39.2932, -76.5910 39.2932, -76.5910 39.2849, -76.5965 39.2849))"
     # Let PostGIS handle the geometry translation natively
     @properties = Property.where("ST_Intersects(boundary, ST_GeomFromText(?, 4326))", district_wkt)
                           .with_attached_photo
