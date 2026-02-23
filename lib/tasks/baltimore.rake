@@ -22,10 +22,9 @@ namespace :baltimore do
       
       url = URI(base_url)
       
-      # THE TIGHT NET: Sits exactly in the alleys outside our 4 boundary streets
       url.query = URI.encode_www_form(
         where: "1=1",
-        geometry: "-76.591550,39.285868,-76.597137,39.293179",        
+        geometry: "-76.591551,39.285867,-76.597137,39.293179",        
         geometryType: "esriGeometryEnvelope",
         inSR: 4326,
         outSR: 4326,
