@@ -1,5 +1,5 @@
 namespace :baltimore do
-  desc "Fetch parcels with verbose debugging and overlapped boxes"
+  desc "Fetch parcels using 4 overlapping stripes to bypass 1000-record API limits"
   task sync_parcels: :environment do
     require 'uri'
     require 'net/http'
@@ -10,15 +10,18 @@ namespace :baltimore do
     puts "\n🗑️  Clearing old test polygons..."
     Property.destroy_all
 
-    puts "📡 Connecting to Open Baltimore...\n\n"
+    puts "📡 Connecting to OpenBaltimore...\n\n"
 
     base_url = "https://geodata.baltimorecity.gov/egis/rest/services/CityView/Realproperty_OB/FeatureServer/0/query"
 
-    # OVERLAPPING BOXES: Notice the South box ends at .2890 and the North box starts at .2885
-    # This overlap guarantees properties right on the "equator" (Pratt St) don't get dropped!
+    # 4 HORIZONTAL STRIPES (Moving from South to North)
+    # Notice the overlap: Stripe 1 ends at .2860, Stripe 2 starts at .2855.
+    # This ensures no property sitting on the line ever gets skipped!
     boxes = [
-      "-76.5985,39.2830,-76.5895,39.2890", # South Half (Eastern Ave up past Pratt St)
-      "-76.5985,39.2885,-76.5895,39.2940"  # North Half (Pratt St up past Fairmount Ave)
+      "-76.5985,39.2830,-76.5895,39.2860", # Stripe 1: Eastern Ave to roughly Gough St
+      "-76.5985,39.2855,-76.5895,39.2890", # Stripe 2: Gough St to Pratt St
+      "-76.5985,39.2885,-76.5895,39.2915", # Stripe 3: Pratt St to Baltimore St
+      "-76.5985,39.2910,-76.5895,39.2940"  # Stripe 4: Baltimore St up to Fairmount Ave
     ]
 
     saved_addresses = Set.new
@@ -26,7 +29,7 @@ namespace :baltimore do
 
     boxes.each_with_index do |box, index|
       puts "=========================================================="
-      puts "🔄 FETCHING BOX #{index + 1} of 2"
+      puts "🔄 FETCHING STRIPE #{index + 1} of 4"
       puts "=========================================================="
       
       url = URI(base_url)
@@ -55,7 +58,7 @@ namespace :baltimore do
       features = data['features']
 
       if features.nil? || features.empty?
-        puts "⚠️ WARNING: OpenBaltimore returned 0 features for this box!"
+        puts "⚠️ WARNING: OpenBaltimore returned 0 features for this stripe!"
         next
       end
 
@@ -68,7 +71,6 @@ namespace :baltimore do
         rgeo_feature = RGeo::GeoJSON.decode(feature)
         geom = rgeo_feature.geometry
         
-        # We check both ArcGIS casing variants
         address = props['FULLADDR'] || props['fulladdr'] || "Unknown Address"
         upcase_address = address.upcase
 
@@ -83,11 +85,9 @@ namespace :baltimore do
         end
 
         # ==========================================
-        # 🛡️ THE SMART FILTER
+        # 🛡️ THE SMART FILTER (Odd/Even Trimming)
         # ==========================================
         
-        # Removed "SPRING" and "WASHINGTON" since they are inside or edge cases.
-        # Only hard-dropping the absolute "next street over" block names.
         unwanted_streets = ["FAYETTE", "FLEET", "WOLFE", "CENTRAL"]
         if unwanted_streets.any? { |street| upcase_address.include?(street) }
           puts "  [🚧 SKIPPED - BLACKLISTED]   | #{address} (Fell on unwanted street)"
