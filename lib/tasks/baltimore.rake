@@ -1,5 +1,5 @@
 namespace :baltimore do
-  desc "Fetch real parcel boundaries from Open Baltimore with pagination"
+  desc "Fetch real parcel boundaries from Open Baltimore with address filtering"
   task sync_parcels: :environment do
     require 'uri'
     require 'net/http'
@@ -22,17 +22,17 @@ namespace :baltimore do
       
       url = URI(base_url)
       
-      # We use Ruby's built-in encoder, which safely handles everything
+      # THE BIG NET: Oversized to guarantee we catch Eastern Ave and Fairmount
       url.query = URI.encode_www_form(
         where: "1=1",
-        geometry: "-76.591550,39.285867,-76.598568,39.292665",        
+        geometry: "-76.5985,39.2835,-76.5895,39.2945",     
         geometryType: "esriGeometryEnvelope",
         inSR: 4326,
         outSR: 4326,
         spatialRel: "esriSpatialRelIntersects",
         outFields: "*",
         f: "geojson",
-        orderByFields: "OBJECTID ASC", # Required for stable pagination!
+        orderByFields: "OBJECTID ASC",
         resultOffset: offset,
         resultRecordCount: batch_size
       )
@@ -46,10 +46,7 @@ namespace :baltimore do
       data = JSON.parse(response.body)
       features = data['features']
 
-      # Break the loop if the server returns nothing
       break if features.nil? || features.empty?
-
-      puts "✅ Batch found #{features.length} parcels. Saving..."
 
       features.each do |feature|
         props = feature['properties']
@@ -59,17 +56,34 @@ namespace :baltimore do
         
         next if geom.nil?
 
-        # ArcGIS GeoJSON sometimes downcases column names, so we safely check both
         address = props['FULLADDR'] || props['fulladdr'] || "Unknown Address"
+        upcase_address = address.upcase
+
+        # ==========================================
+        # 🛡️ THE SMART FILTER
+        # ==========================================
+        
+        # 1. Drop streets we absolutely know are out of bounds (too far N/S/E)
+        unwanted_streets = ["WOLFE", "WASHINGTON", "FLEET", "FAYETTE", "ALICEANNA"]
+        next if unwanted_streets.any? { |street| upcase_address.include?(street) }
+
+        # Extract the house number (e.g., "123 S Ann St" -> 123)
+        house_number = upcase_address.to_i 
+
+        if house_number > 0
+          # 2. Drop the West side of Eden Street (Even numbers = West side)
+          next if upcase_address.include?("EDEN") && house_number.even?
+          
+          # 3. Drop the East side of Ann Street (Odd numbers = East side)
+          next if upcase_address.include?("ANN") && house_number.odd?
+        end
+        # ==========================================
+
         usage = props['USEGROUP'] || props['usegroup'] || "Mixed-Use"
         owner = props['OWNER_1'] || props['owner_1'] || "Unknown"
-        
         year = props['YEAR_BUILD'] || props['year_build'] || props['YEAR_BUILT'] || props['year_built']
-        
-        # FIX 1: The column is actually SALEPRIC (Missing the 'E')
         price = props['SALEPRIC'] || props['salepric']
         
-        # FIX 2: Parse the 8-character "MMDDYYYY" string into a real Ruby Date
         raw_date = props['SALEDATE'] || props['saledate']
         parsed_date = nil
         
@@ -77,11 +91,11 @@ namespace :baltimore do
           begin
             parsed_date = Date.strptime(raw_date.strip, "%m%d%Y")
           rescue StandardError
-            parsed_date = nil # Failsafe if the city has a bad date entry like "00000000"
+            parsed_date = nil 
           end
         end
 
-        property = Property.new(
+        Property.create!(
           address: address,
           usage_type: usage,
           owner: owner,
@@ -90,17 +104,14 @@ namespace :baltimore do
           sale_price: price,
           sale_date: parsed_date
         )
-        
-        property.save!
       end
       
       total_fetched += features.length
       offset += batch_size
       
-      # If the API gives us less than 1000 properties, we know we've hit the end of the list!
       break if features.length < batch_size
     end
 
-    puts "🎉 Import complete! You now have #{Property.count} actual properties mapped."
+    puts "🎉 Import complete! You now have #{Property.count} beautifully curated properties mapped."
   end
 end
