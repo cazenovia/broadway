@@ -1,10 +1,11 @@
 namespace :baltimore do
-  desc "Fetch real parcel boundaries from Open Baltimore with a slanted polygon"
+  desc "Fetch parcels using split bounding boxes to bypass broken API pagination"
   task sync_parcels: :environment do
     require 'uri'
     require 'net/http'
     require 'json'
     require 'rgeo/geo_json'
+    require 'set'
 
     puts "🗑️  Clearing old test polygons..."
     Property.destroy_all
@@ -12,41 +13,30 @@ namespace :baltimore do
     puts "📡 Connecting to Open Baltimore..."
 
     base_url = "https://geodata.baltimorecity.gov/egis/rest/services/CityView/Realproperty_OB/FeatureServer/0/query"
-    
-    offset = 0
-    batch_size = 1000
-    total_fetched = 0
 
-    # THE TILTED POLYGON
-    # We draw a slanted shape that perfectly matches the tilt of the street grid!
-    polygon_json = {
-      "rings" => [[
-        [-76.5980, 39.2838], # Southwest (Eden & Eastern area)
-        [-76.5975, 39.2936], # Northwest (Eden & Fairmount area)
-        [-76.5895, 39.2932], # Northeast (Ann & Fairmount area)
-        [-76.5900, 39.2835], # Southeast (Ann & Eastern area)
-        [-76.5980, 39.2838]  # Close loop back at Southwest
-      ]],
-      "spatialReference" => { "wkid" => 4326 }
-    }.to_json
+    # Split the district in half (North/South) to guarantee < 1000 records per API call!
+    boxes = [
+      "-76.5980,39.2838,-76.5900,39.2887", # South Half (Eastern Ave to Pratt St)
+      "-76.5980,39.2887,-76.5900,39.2936"  # North Half (Pratt St to Fairmount Ave)
+    ]
 
-    loop do
-      puts "🔄 Fetching batch starting at offset #{offset}..."
+    saved_addresses = Set.new
+
+    boxes.each_with_index do |box, index|
+      puts "🔄 Fetching Box #{index + 1} of 2..."
       
       url = URI(base_url)
       
+      # NO PAGINATION PARAMETERS! Just fetch the raw box!
       url.query = URI.encode_www_form(
         where: "1=1",
-        geometry: polygon_json,      
-        geometryType: "esriGeometryPolygon", # <-- The magic geometry type!
+        geometry: box,      
+        geometryType: "esriGeometryEnvelope",
         inSR: 4326,
         outSR: 4326,
         spatialRel: "esriSpatialRelIntersects",
         outFields: "*",
-        f: "geojson",
-        orderByFields: "objectid ASC", # Lowercase 'objectid' is safer for OpenBaltimore
-        resultOffset: offset,
-        resultRecordCount: batch_size
+        f: "geojson"
       )
 
       response = Net::HTTP.get_response(url)
@@ -58,7 +48,7 @@ namespace :baltimore do
       data = JSON.parse(response.body)
       features = data['features']
 
-      break if features.nil? || features.empty?
+      next if features.nil? || features.empty?
 
       features.each do |feature|
         props = feature['properties']
@@ -71,10 +61,14 @@ namespace :baltimore do
         address = props['FULLADDR'] || props['fulladdr'] || "Unknown Address"
         upcase_address = address.upcase
 
+        # Skip if we already saved this property (handles the overlap between the two boxes)
+        next if saved_addresses.include?(upcase_address)
+
         # ==========================================
         # 🛡️ THE SMART FILTER (Odd/Even Trimming)
         # ==========================================
         
+        # Hard drop streets we definitely don't want
         unwanted_streets = ["FAYETTE", "ORLEANS", "FLEET", "ALICEANNA", "WOLFE", "WASHINGTON", "CENTRAL", "SPRING"]
         next if unwanted_streets.any? { |street| upcase_address.include?(street) }
 
@@ -120,12 +114,9 @@ namespace :baltimore do
           sale_price: price,
           sale_date: parsed_date
         )
+
+        saved_addresses.add(upcase_address)
       end
-      
-      total_fetched += features.length
-      offset += batch_size
-      
-      break if features.length < batch_size
     end
 
     puts "🎉 Import complete! You now have #{Property.count} beautifully curated properties mapped."
