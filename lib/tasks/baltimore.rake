@@ -22,9 +22,11 @@ namespace :baltimore do
       
       url = URI(base_url)
       
+      # THE BIG NET: Oversized to guarantee we catch the slanted southeast corner!
+      # West: -76.5995, South: 39.2825, East: -76.5890, North: 39.2945
       url.query = URI.encode_www_form(
         where: "1=1",
-        geometry: "-76.59905,39.28361,-76.59147,39.29231",      
+        geometry: "-76.5995,39.2825,-76.5890,39.2945",      
         geometryType: "esriGeometryEnvelope",
         inSR: 4326,
         outSR: 4326,
@@ -57,6 +59,32 @@ namespace :baltimore do
 
         address = props['FULLADDR'] || props['fulladdr'] || "Unknown Address"
         upcase_address = address.upcase
+
+        # ==========================================
+        # 🛡️ THE SMART FILTER (Odd/Even Trimming)
+        # ==========================================
+        
+        # 1. Drop streets we absolutely know are outside our intended district
+        unwanted_streets = ["FAYETTE", "ORLEANS", "FLEET", "ALICEANNA", "WOLFE", "WASHINGTON", "CENTRAL", "SPRING"]
+        next if unwanted_streets.any? { |street| upcase_address.include?(street) }
+
+        # Extract the house number (e.g., "123 S Ann St" -> 123)
+        house_number = upcase_address.to_i 
+
+        if house_number > 0
+          # WEST BOUNDARY (Eden St): Keep East side (Odd). Drop Even.
+          next if upcase_address.include?("EDEN") && house_number.even?
+          
+          # EAST BOUNDARY (Ann St): Keep West side (Even). Drop Odd.
+          next if upcase_address.include?("ANN") && house_number.odd?
+
+          # SOUTH BOUNDARY (Eastern Ave): Keep North side (Odd). Drop Even.
+          next if upcase_address.include?("EASTERN") && house_number.even?
+
+          # NORTH BOUNDARY (Fairmount Ave): Keep South side (Even). Drop Odd.
+          next if upcase_address.include?("FAIRMOUNT") && house_number.odd?
+        end
+        # ==========================================
 
         usage = props['USEGROUP'] || props['usegroup'] || "Mixed-Use"
         owner = props['OWNER_1'] || props['owner_1'] || "Unknown"
