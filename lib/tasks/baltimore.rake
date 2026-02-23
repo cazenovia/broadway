@@ -25,7 +25,7 @@ namespace :baltimore do
       # THE TIGHT NET: Sits exactly in the alleys outside our 4 boundary streets
       url.query = URI.encode_www_form(
         where: "1=1",
-        geometry: "-76.5975,39.2843,-76.5905,39.2934",     
+        geometry: "-76.591550,39.285868,-76.597137,39.293179",        
         geometryType: "esriGeometryEnvelope",
         inSR: 4326,
         outSR: 4326,
@@ -66,24 +66,6 @@ namespace :baltimore do
         # 1. Hard-drop the absolute "next street over" just in case the box catches them
         unwanted_streets = ["FAYETTE", "ORLEANS", "FLEET", "ALICEANNA", "WOLFE", "WASHINGTON", "CENTRAL", "SPRING"]
         next if unwanted_streets.any? { |street| upcase_address.include?(street) }
-
-        # Extract the house number (e.g., "123 S Ann St" -> 123)
-        house_number = upcase_address.to_i 
-
-        if house_number > 0
-          # WEST BOUNDARY (Eden St): Keep East side (Odd). Drop Even.
-          next if upcase_address.include?("EDEN") && house_number.even?
-          
-          # EAST BOUNDARY (Ann St): Keep West side (Even). Drop Odd.
-          next if upcase_address.include?("ANN") && house_number.odd?
-
-          # SOUTH BOUNDARY (Eastern Ave): Keep North side (Odd). Drop Even.
-          next if upcase_address.include?("EASTERN") && house_number.even?
-
-          # NORTH BOUNDARY (Fairmount Ave): Keep South side (Even). Drop Odd.
-          next if upcase_address.include?("FAIRMOUNT") && house_number.odd?
-        end
-        # ==========================================
 
         usage = props['USEGROUP'] || props['usegroup'] || "Mixed-Use"
         owner = props['OWNER_1'] || props['owner_1'] || "Unknown"
