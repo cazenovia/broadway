@@ -1,5 +1,5 @@
 namespace :baltimore do
-  desc "Fetch real parcel boundaries from Open Baltimore with precise address filtering"
+  desc "Fetch real parcel boundaries from Open Baltimore with a slanted polygon"
   task sync_parcels: :environment do
     require 'uri'
     require 'net/http'
@@ -17,23 +17,34 @@ namespace :baltimore do
     batch_size = 1000
     total_fetched = 0
 
+    # THE TILTED POLYGON
+    # We draw a slanted shape that perfectly matches the tilt of the street grid!
+    polygon_json = {
+      "rings" => [[
+        [-76.5980, 39.2838], # Southwest (Eden & Eastern area)
+        [-76.5975, 39.2936], # Northwest (Eden & Fairmount area)
+        [-76.5895, 39.2932], # Northeast (Ann & Fairmount area)
+        [-76.5900, 39.2835], # Southeast (Ann & Eastern area)
+        [-76.5980, 39.2838]  # Close loop back at Southwest
+      ]],
+      "spatialReference" => { "wkid" => 4326 }
+    }.to_json
+
     loop do
       puts "🔄 Fetching batch starting at offset #{offset}..."
       
       url = URI(base_url)
       
-      # THE BIG NET: Oversized to guarantee we catch the slanted southeast corner!
-      # West: -76.5995, South: 39.2825, East: -76.5890, North: 39.2945
       url.query = URI.encode_www_form(
         where: "1=1",
-        geometry: "-76.5995,39.2825,-76.5890,39.2945",      
-        geometryType: "esriGeometryEnvelope",
+        geometry: polygon_json,      
+        geometryType: "esriGeometryPolygon", # <-- The magic geometry type!
         inSR: 4326,
         outSR: 4326,
         spatialRel: "esriSpatialRelIntersects",
         outFields: "*",
         f: "geojson",
-        orderByFields: "OBJECTID ASC",
+        orderByFields: "objectid ASC", # Lowercase 'objectid' is safer for OpenBaltimore
         resultOffset: offset,
         resultRecordCount: batch_size
       )
@@ -64,11 +75,9 @@ namespace :baltimore do
         # 🛡️ THE SMART FILTER (Odd/Even Trimming)
         # ==========================================
         
-        # 1. Drop streets we absolutely know are outside our intended district
         unwanted_streets = ["FAYETTE", "ORLEANS", "FLEET", "ALICEANNA", "WOLFE", "WASHINGTON", "CENTRAL", "SPRING"]
         next if unwanted_streets.any? { |street| upcase_address.include?(street) }
 
-        # Extract the house number (e.g., "123 S Ann St" -> 123)
         house_number = upcase_address.to_i 
 
         if house_number > 0
