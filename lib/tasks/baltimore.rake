@@ -1,5 +1,5 @@
 namespace :baltimore do
-  desc "Fetch real parcel boundaries from Open Baltimore"
+  desc "Fetch real parcel boundaries from Open Baltimore with pagination"
   task sync_parcels: :environment do
     require 'uri'
     require 'net/http'
@@ -11,76 +11,94 @@ namespace :baltimore do
 
     puts "📡 Connecting to Open Baltimore..."
 
-    # THE FIX: The ACTUAL endpoint for Baltimore's "Real Property" GeoService
-    url = URI("https://geodata.baltimorecity.gov/egis/rest/services/CityView/Realproperty_OB/FeatureServer/0/query")
+    base_url = "https://geodata.baltimorecity.gov/egis/rest/services/CityView/Realproperty_OB/FeatureServer/0/query"
+    
+    offset = 0
+    batch_size = 1000
+    total_fetched = 0
 
-    # We use Ruby's built-in encoder, which safely handles everything
-    url.query = URI.encode_www_form(
-      where: "1=1",
-      geometry: "-76.5965,39.2849,-76.5910,39.2932",     
-      geometryType: "esriGeometryEnvelope",
-      inSR: 4326,
-      outSR: 4326,
-      spatialRel: "esriSpatialRelIntersects",
-      outFields: "*",
-      f: "geojson"
-    )
-
-    response = Net::HTTP.get_response(url)
-
-    if response.code != "200"
-      abort("❌ API Error: #{response.code}\nServer said: #{response.body}")
-    end
-
-    data = JSON.parse(response.body)
-
-    unless data['features'] && data['features'].any?
-      abort("❌ Failed to fetch data. No features returned. (Check your bounding box!)")
-    end
-
-    puts "✅ Found #{data['features'].length} parcels! Saving to database..."
-
-    data['features'].each do |feature|
-      props = feature['properties']
+    loop do
+      puts "🔄 Fetching batch starting at offset #{offset}..."
       
-      rgeo_feature = RGeo::GeoJSON.decode(feature)
-      geom = rgeo_feature.geometry
+      url = URI(base_url)
       
-      next if geom.nil?
+      # We use Ruby's built-in encoder, which safely handles everything
+      url.query = URI.encode_www_form(
+        where: "1=1",
+        geometry: "-76.5965,39.2849,-76.5910,39.2932",     
+        geometryType: "esriGeometryEnvelope",
+        inSR: 4326,
+        outSR: 4326,
+        spatialRel: "esriSpatialRelIntersects",
+        outFields: "*",
+        f: "geojson",
+        orderByFields: "OBJECTID ASC", # Required for stable pagination!
+        resultOffset: offset,
+        resultRecordCount: batch_size
+      )
 
-# ArcGIS GeoJSON sometimes downcases column names, so we safely check both
-      address = props['FULLADDR'] || props['fulladdr'] || "Unknown Address"
-      usage = props['USEGROUP'] || props['usegroup'] || "Mixed-Use"
-      owner = props['OWNER_1'] || props['owner_1'] || "Unknown"
-      
-      year = props['YEAR_BUILD'] || props['year_build'] || props['YEAR_BUILT'] || props['year_built']
-      
-      # FIX 1: The column is actually SALEPRIC (Missing the 'E')
-      price = props['SALEPRIC'] || props['salepric']
-      
-      # FIX 2: Parse the 8-character "MMDDYYYY" string into a real Ruby Date
-      raw_date = props['SALEDATE'] || props['saledate']
-      parsed_date = nil
-      
-      if raw_date.is_a?(String) && raw_date.strip.length == 8
-        begin
-          parsed_date = Date.strptime(raw_date.strip, "%m%d%Y")
-        rescue StandardError
-          parsed_date = nil # Failsafe if the city has a bad date entry like "00000000"
-        end
+      response = Net::HTTP.get_response(url)
+
+      if response.code != "200"
+        abort("❌ API Error: #{response.code}\nServer said: #{response.body}")
       end
 
-      property = Property.new(
-        address: address,
-        usage_type: usage,
-        owner: owner,
-        boundary: geom,
-        year_built: year,
-        sale_price: price,
-        sale_date: parsed_date
-      )
+      data = JSON.parse(response.body)
+      features = data['features']
+
+      # Break the loop if the server returns nothing
+      break if features.nil? || features.empty?
+
+      puts "✅ Batch found #{features.length} parcels. Saving..."
+
+      features.each do |feature|
+        props = feature['properties']
+        
+        rgeo_feature = RGeo::GeoJSON.decode(feature)
+        geom = rgeo_feature.geometry
+        
+        next if geom.nil?
+
+        # ArcGIS GeoJSON sometimes downcases column names, so we safely check both
+        address = props['FULLADDR'] || props['fulladdr'] || "Unknown Address"
+        usage = props['USEGROUP'] || props['usegroup'] || "Mixed-Use"
+        owner = props['OWNER_1'] || props['owner_1'] || "Unknown"
+        
+        year = props['YEAR_BUILD'] || props['year_build'] || props['YEAR_BUILT'] || props['year_built']
+        
+        # FIX 1: The column is actually SALEPRIC (Missing the 'E')
+        price = props['SALEPRIC'] || props['salepric']
+        
+        # FIX 2: Parse the 8-character "MMDDYYYY" string into a real Ruby Date
+        raw_date = props['SALEDATE'] || props['saledate']
+        parsed_date = nil
+        
+        if raw_date.is_a?(String) && raw_date.strip.length == 8
+          begin
+            parsed_date = Date.strptime(raw_date.strip, "%m%d%Y")
+          rescue StandardError
+            parsed_date = nil # Failsafe if the city has a bad date entry like "00000000"
+          end
+        end
+
+        property = Property.new(
+          address: address,
+          usage_type: usage,
+          owner: owner,
+          boundary: geom,
+          year_built: year,
+          sale_price: price,
+          sale_date: parsed_date
+        )
+        
+        property.save!
+      end
       
-      property.save!
+      total_fetched += features.length
+      offset += batch_size
+      
+      # If the API gives us less than 1000 properties, we know we've hit the end of the list!
+      break if features.length < batch_size
     end
 
     puts "🎉 Import complete! You now have #{Property.count} actual properties mapped."
