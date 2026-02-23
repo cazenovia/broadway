@@ -25,7 +25,7 @@ namespace :baltimore do
       # We use Ruby's built-in encoder, which safely handles everything
       url.query = URI.encode_www_form(
         where: "1=1",
-        geometry: "-76.591550,39.285867,-76.597137,39.293179",        
+        geometry: "-76.591550,39.285867,-76.598568,39.292665",        
         geometryType: "esriGeometryEnvelope",
         inSR: 4326,
         outSR: 4326,

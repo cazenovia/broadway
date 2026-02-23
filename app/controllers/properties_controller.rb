@@ -4,7 +4,7 @@ class PropertiesController < ApplicationController
   # GET /properties or /properties.json
   def index
     # The raw string defining our District (Caroline to Ann, Eastern to Baltimore)
-district_wkt = "POLYGON((-76.597137 39.285867, -76.597137 39.293179, -76.591550 39.293179, -76.591550 39.285867, -76.597137 39.285867))"    
+district_wkt = "POLYGON((-76.598568 39.285867, -76.598568 39.292665, -76.591550 39.292665, -76.591550 39.285867, -76.598568 39.285867))"    
 @properties = Property.where("ST_Intersects(boundary, ST_GeomFromText(?, 4326))", district_wkt)
                           .with_attached_photo
                           .includes(:tickets, :contacts)
