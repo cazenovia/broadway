@@ -24,7 +24,7 @@ namespace :baltimore do
       
       url.query = URI.encode_www_form(
         where: "1=1",
-        geometry: "-76.591551,39.285867,-76.597137,39.293179",        
+        geometry: "-76.59905,39.29231,-76.59154,39.28568",      
         geometryType: "esriGeometryEnvelope",
         inSR: 4326,
         outSR: 4326,
