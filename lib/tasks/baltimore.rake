@@ -15,13 +15,12 @@ namespace :baltimore do
     base_url = "https://geodata.baltimorecity.gov/egis/rest/services/CityView/Realproperty_OB/FeatureServer/0/query"
 
     # 4 HORIZONTAL STRIPES (Moving from South to North)
-    # Notice the overlap: Stripe 1 ends at .2860, Stripe 2 starts at .2855.
-    # This ensures no property sitting on the line ever gets skipped!
+    # The overlaps are significantly widened here to ensure NO gaps between stripes!
     boxes = [
-      "-76.5985,39.2830,-76.5895,39.2860", # Stripe 1: Eastern Ave to roughly Gough St
-      "-76.5985,39.2855,-76.5895,39.2890", # Stripe 2: Gough St to Pratt St
-      "-76.5985,39.2885,-76.5895,39.2915", # Stripe 3: Pratt St to Baltimore St
-      "-76.5985,39.2910,-76.5895,39.2940"  # Stripe 4: Baltimore St up to Fairmount Ave
+      "-76.5995,39.2825,-76.5890,39.2865", # Stripe 1: Eastern Ave to roughly Gough St
+      "-76.5995,39.2855,-76.5890,39.2895", # Stripe 2: Gough St to Pratt St
+      "-76.5995,39.2885,-76.5890,39.2920", # Stripe 3: Pratt St to Baltimore St
+      "-76.5995,39.2910,-76.5890,39.2945"  # Stripe 4: Baltimore St up to Fairmount Ave
     ]
 
     saved_addresses = Set.new
@@ -97,23 +96,23 @@ namespace :baltimore do
         house_number = upcase_address.to_i 
 
         if house_number > 0
+          # N/S STREETS: West side is Even, East side is Odd
           if upcase_address.include?("EDEN") && house_number.even?
             puts "  [✂️ SKIPPED - EDEN WEST]     | #{address} (Even # on West Boundary)"
             next
           end
-          
           if upcase_address.include?("ANN") && house_number.odd?
             puts "  [✂️ SKIPPED - ANN EAST]      | #{address} (Odd # on East Boundary)"
             next
           end
 
-          if upcase_address.include?("EASTERN") && house_number.even?
-            puts "  [✂️ SKIPPED - EASTERN SOUTH] | #{address} (Even # on South Boundary)"
+          # E/W STREETS: North side is Even, South side is Odd
+          if upcase_address.include?("EASTERN") && house_number.odd?
+            puts "  [✂️ SKIPPED - EASTERN SOUTH] | #{address} (Odd # on South Boundary)"
             next
           end
-
-          if upcase_address.include?("FAIRMOUNT") && house_number.odd?
-            puts "  [✂️ SKIPPED - FAIRMOUNT NORTH]| #{address} (Odd # on North Boundary)"
+          if upcase_address.include?("FAIRMOUNT") && house_number.even?
+            puts "  [✂️ SKIPPED - FAIRMOUNT NORTH]| #{address} (Even # on North Boundary)"
             next
           end
         end
