@@ -15,8 +15,8 @@ export default class extends Controller {
       style: 'mapbox://styles/mapbox/light-v11',
       // Use the SW and NE corners to perfectly frame the district on load!
       bounds: [
-        [-76.5965, 39.2849], // Southwest corner (Caroline & Eastern)
-        [-76.5910, 39.2932]  // Northeast corner (Ann & Fairmount)
+        [-76.5968, 39.2842], // Southwest (Lowest point)
+        [-76.5910, 39.2930]  // Northeast (Highest point)
       ],
       fitBoundsOptions: { padding: 50 } // Gives a nice 50px visual margin around the edges
     });
