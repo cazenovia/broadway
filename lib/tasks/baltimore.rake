@@ -24,7 +24,7 @@ namespace :baltimore do
       
       url.query = URI.encode_www_form(
         where: "1=1",
-        geometry: "-76.59905,39.29231,-76.59147,39.28361",      
+        geometry: "-76.59905,39.28361,-76.59147,39.29231",      
         geometryType: "esriGeometryEnvelope",
         inSR: 4326,
         outSR: 4326,
@@ -57,14 +57,6 @@ namespace :baltimore do
 
         address = props['FULLADDR'] || props['fulladdr'] || "Unknown Address"
         upcase_address = address.upcase
-
-        # ==========================================
-        # 🛡️ THE BALTIMORE ODD/EVEN FILTER
-        # ==========================================
-        
-        # 1. Hard-drop the absolute "next street over" just in case the box catches them
-        unwanted_streets = ["FAYETTE", "ORLEANS", "FLEET", "ALICEANNA", "WOLFE", "WASHINGTON", "CENTRAL", "SPRING"]
-        next if unwanted_streets.any? { |street| upcase_address.include?(street) }
 
         usage = props['USEGROUP'] || props['usegroup'] || "Mixed-Use"
         owner = props['OWNER_1'] || props['owner_1'] || "Unknown"
