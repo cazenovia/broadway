@@ -22,9 +22,13 @@ class TicketsController < ApplicationController
   end
 
   def update
-    @ticket = Ticket.find(params[:id])
-        
-    @ticket.status = params.dig(:ticket, :status) if params.dig(:ticket, :status).present?
+  @ticket = Ticket.find(params[:id])
+  
+  # Apply all permitted params (title, baltimore_ticket_id, photos)
+  @ticket.assign_attributes(ticket_params)
+  
+  # Keep your manual status override if that's a specific requirement
+  @ticket.status = params.dig(:ticket, :status) if params.dig(:ticket, :status).present?
     
     if @ticket.save
       if params[:ticket_note] && params[:ticket_note][:body].present?
@@ -44,6 +48,6 @@ class TicketsController < ApplicationController
   private
 
   def ticket_params
-    params.expect(ticket: [ :title, photos: [] ])
+    params.expect(ticket: [ :title, :baltimore_ticket_id, photos: [] ])
   end
 end
