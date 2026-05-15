@@ -13,15 +13,13 @@ export default class extends Controller {
     this.map = new mapboxgl.Map({
       container: this.element,
       style: 'mapbox://styles/mapbox/light-v11',
-      bounds: [
-        [-76.591550, 39.285867], // Southeast
-        [-76.598568, 39.292665]  // Northwest
-      ],
-      fitBoundsOptions: { 
-        padding: 50,
-        pitch: 60,   // <-- Adds the dramatic 3D tilt (0 is flat, 60 is heavily angled)
-        bearing: 0   // <-- Ensures North stays perfectly "up" on the screen
-      }
+      
+      // --- THE FIX: Explicit Camera Settings ---
+      // Instead of letting Mapbox calculate bounds, we explicitly set the camera.
+      center: [-76.5938, 39.2875], // Coordinates roughly centered on S Broadway
+      zoom: 16,                    // Tight enough to make the 3D buildings pop
+      pitch: 60,                   // The dramatic 3D tilt
+      bearing: -12                 // Rotates the map to align perfectly with the street grid
     });
 
     this.map.on('load', () => {
