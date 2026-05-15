@@ -27,6 +27,18 @@ export default class extends Controller {
         data: this.propertiesValue
       });
 
+      // 🛠️ TEMPORARY DEV TOOL: Log camera settings when you stop moving the map
+      this.map.on('moveend', () => {
+        const center = this.map.getCenter();
+        console.log(`
+          // COPY THIS INTO YOUR MAP INIT:
+          center: [${center.lng.toFixed(5)}, ${center.lat.toFixed(5)}],
+          zoom: ${this.map.getZoom().toFixed(2)},
+          pitch: ${this.map.getPitch().toFixed(0)},
+          bearing: ${this.map.getBearing().toFixed(1)}
+        `);
+      });
+
       // Insert the layer beneath labels
       const layers = this.map.getStyle().layers;
       const labelLayerId = layers.find(
