@@ -28,7 +28,7 @@
 
   <div class="my-5">
     <%= form.label :usage_type %>
-    <%= form.text_field :usage_type, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": property.errors[:usage_type].none?, "border-red-400 focus:outline-red-600": property.errors[:usage_type].any?}] %>
+    <%= form.select :usage_type, ["Residential", "Commercial", "Exempt", "Church"], { prompt: "Select Usage..." }, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full bg-white", {"border-gray-400 focus:outline-blue-600": property.errors[:usage_type].none?, "border-red-400 focus:outline-red-600": property.errors[:usage_type].any?}] %>
   </div>
 
   <div class="my-5">

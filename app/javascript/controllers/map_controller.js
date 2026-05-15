@@ -35,12 +35,11 @@ export default class extends Controller {
           'fill-color': [
             'match',
             ['get', 'usage_type'],
-            'Commercial', '#10B981',
-            'Residential', '#3B82F6',
-            'Vacant', '#EF4444',
-            'Mixed-Use', '#8B5CF6',
-            'Government', '#ebab00',
-            '#9CA3AF'
+            'Commercial', '#10B981',  // Green
+            'Residential', '#3B82F6', // Blue
+            'Exempt', '#ebab00',      // Yellow
+            'Church', '#8B5CF6',      // Purple
+            '#9CA3AF'                 // Default Grey for anything else/unknown
           ],
           'fill-opacity': 0.6
         }

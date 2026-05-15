@@ -7,18 +7,26 @@ namespace :baltimore do
     require 'rgeo/geo_json'
     require 'set'
 
-    puts "\n🗑️  Clearing old test polygons..."
-    Property.destroy_all
+    # ==========================================
+    # 🗺️ THE TRANSLATION DICTIONARY
+    # Maps City 1-letter codes to your Frontend strings
+    # ==========================================
+    CITY_USAGE_MAP = {
+      "R" => "Residential",
+      "C" => "Commercial",
+      "M" => "Mixed Use",
+      "I" => "Industrial",
+      "E" => "Exempt" # Often used for government/parks
+    }.freeze
+
+    # 🚨 REMOVED: Property.destroy_all 
+    # We now update existing records instead of nuking the database!
 
     puts "📡 Connecting to OpenBaltimore...\n\n"
 
     base_url = "https://geodata.baltimorecity.gov/egis/rest/services/CityView/Realproperty_OB/FeatureServer/0/query"
 
-    # =========================================================
     # THE DYNAMIC 12-BOX GRID
-    # Slices the district into 12 small squares to guarantee 
-    # we NEVER hit the 1000-record API truncation limit!
-    # =========================================================
     min_x, max_x = -76.5995, -76.5890
     min_y, max_y = 39.2825, 39.2945
 
@@ -90,23 +98,15 @@ namespace :baltimore do
           next
         end
 
-        # ==========================================
-        # 🛡️ THE DEDUPLICATION FIX
-        # Deduplicate by ArcGIS Object ID, not the string address!
-        # ==========================================
         parcel_id = feature['id'] || props['OBJECTID'] || props['objectid'] || "#{address}-#{geom.to_s.hash}"
 
         if saved_parcel_ids.include?(parcel_id)
-          # Silenced the duplicate output so it doesn't flood your console!
           next
         end
 
         saved_parcel_ids.add(parcel_id)
 
-
-        # ==========================================
-        # 🛡️ THE SMART FILTER (Odd/Even Trimming)
-        # ==========================================
+        # THE SMART FILTER (Odd/Even Trimming)
         unwanted_streets = ["FAYETTE", "FLEET", "WOLFE", "CENTRAL"]
         if unwanted_streets.any? { |street| upcase_address.include?(street) }
           puts "  [🚧 SKIPPED - BLACKLISTED]   | #{address} (Fell on unwanted street)"
@@ -133,9 +133,14 @@ namespace :baltimore do
             next
           end
         end
-        # ==========================================
 
-        usage = props['USEGROUP'] || props['usegroup'] || "Mixed-Use"
+        # ==========================================
+        # 🧩 THE TRANSLATION FIX
+        # ==========================================
+        raw_code = (props['USEGROUP'] || props['usegroup']).to_s.strip
+        usage = CITY_USAGE_MAP[raw_code] || raw_code
+        usage = "Mixed-Use" if usage.blank? # Fallback if API sends nothing
+
         owner = props['OWNER_1'] || props['owner_1'] || "Unknown"
         year = props['YEAR_BUILD'] || props['year_build'] || props['YEAR_BUILT'] || props['year_built']
         price = props['SALEPRIC'] || props['salepric']
@@ -151,8 +156,17 @@ namespace :baltimore do
           end
         end
 
-        Property.create!(
-          address: address,
+        # ==========================================
+        # 🛡️ THE UPSERT FIX (Safe Saving)
+        # ==========================================
+        # This finds an existing property by its address. If it doesn't exist, it builds a new one.
+        property = Property.find_or_initialize_by(address: address)
+        
+        # Determine if we are updating or creating for the logger
+        action_log = property.new_record? ? "✅ CREATED" : "🔄 UPDATED"
+
+        # Update the API fields (leaving user-entered things like resident counts untouched)
+        property.assign_attributes(
           usage_type: usage,
           owner: owner,
           boundary: geom,
@@ -161,14 +175,16 @@ namespace :baltimore do
           sale_date: parsed_date
         )
 
-        puts "  [✅ SAVED TO DATABASE]       | #{address}"
+        property.save!
+
+        puts "  [#{action_log}]            | #{address} (#{usage})"
       end
     end
 
     puts "\n=========================================================="
-    puts "🎉 IMPORT COMPLETE!"
+    puts "🎉 SYNC COMPLETE!"
     puts "Total Raw Features from API: #{total_api_features}"
-    puts "Total Properties Saved:      #{Property.count}"
+    puts "Total Properties in DB:      #{Property.count}"
     puts "==========================================================\n"
   end
 end
