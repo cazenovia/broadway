@@ -15,10 +15,10 @@ export default class extends Controller {
       style: 'mapbox://styles/mapbox/light-v11',
       
       // The "Hero Shot" Camera Settings
-      center: [-76.5936, 39.2868], // Tightly centered right on the 400 block of S Broadway
-      zoom: 17.8,                  // Zoomed way in (18 is building-level, 16 was neighborhood)
-      pitch: 65,                   // Maximum dramatic tilt for the 3D effect
-      bearing: -22                 // Rotates the grid so we look at the building facades at a slight angle
+      center: [-76.59279, 39.28787],
+      zoom: 17.25,
+      pitch: 52,
+      bearing: -62.8
     });
 
     this.map.on('load', () => {
@@ -28,16 +28,16 @@ export default class extends Controller {
       });
 
       // 🛠️ TEMPORARY DEV TOOL: Log camera settings when you stop moving the map
-      this.map.on('moveend', () => {
-        const center = this.map.getCenter();
-        console.log(`
+      //this.map.on('moveend', () => {
+      //  const center = this.map.getCenter();
+      //  console.log(`
           // COPY THIS INTO YOUR MAP INIT:
-          center: [${center.lng.toFixed(5)}, ${center.lat.toFixed(5)}],
-          zoom: ${this.map.getZoom().toFixed(2)},
-          pitch: ${this.map.getPitch().toFixed(0)},
-          bearing: ${this.map.getBearing().toFixed(1)}
-        `);
-      });
+      //    center: [${center.lng.toFixed(5)}, ${center.lat.toFixed(5)}],
+      //    zoom: ${this.map.getZoom().toFixed(2)},
+      //    pitch: ${this.map.getPitch().toFixed(0)},
+      //    bearing: ${this.map.getBearing().toFixed(1)}
+      //  `);
+      //});
 
       // Insert the layer beneath labels
       const layers = this.map.getStyle().layers;
