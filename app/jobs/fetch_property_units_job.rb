@@ -15,7 +15,7 @@ class FetchPropertyUnitsJob < ApplicationJob
     
     query_params = {
       where: "FULLADDR LIKE '#{search_address}%'", 
-      outFields: "FULLADDR, DHCD_NO_DWELLING", 
+      outFields: "FULLADDR, DWELUNIT", # <-- Updated column name here
       returnGeometry: "false",
       f: "json",
       resultRecordCount: 1
@@ -48,7 +48,7 @@ class FetchPropertyUnitsJob < ApplicationJob
     if data["features"] && data["features"].any?
       attributes = data["features"].first["attributes"]
       
-      units = attributes["DHCD_NO_DWELLING"].to_i 
+      units = attributes["DWELUNIT"].to_i 
       estimated_pop = (units * 2.4).round
 
       if property.residential_units.blank?
