@@ -14,12 +14,11 @@ export default class extends Controller {
       container: this.element,
       style: 'mapbox://styles/mapbox/light-v11',
       
-      // --- THE FIX: Explicit Camera Settings ---
-      // Instead of letting Mapbox calculate bounds, we explicitly set the camera.
-      center: [-76.5938, 39.2875], // Coordinates roughly centered on S Broadway
-      zoom: 16,                    // Tight enough to make the 3D buildings pop
-      pitch: 60,                   // The dramatic 3D tilt
-      bearing: -12                 // Rotates the map to align perfectly with the street grid
+      // The "Hero Shot" Camera Settings
+      center: [-76.5936, 39.2868], // Tightly centered right on the 400 block of S Broadway
+      zoom: 17.8,                  // Zoomed way in (18 is building-level, 16 was neighborhood)
+      pitch: 65,                   // Maximum dramatic tilt for the 3D effect
+      bearing: -22                 // Rotates the grid so we look at the building facades at a slight angle
     });
 
     this.map.on('load', () => {
