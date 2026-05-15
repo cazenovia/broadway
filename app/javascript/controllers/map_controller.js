@@ -13,12 +13,15 @@ export default class extends Controller {
     this.map = new mapboxgl.Map({
       container: this.element,
       style: 'mapbox://styles/mapbox/light-v11',
-      // Use the SW and NE corners to perfectly frame the district on load!
       bounds: [
-        [-76.591550, 39.285867], // Southeast (Lowest point)
-        [-76.598568, 39.292665]  // Northwest (Highest point)
+        [-76.591550, 39.285867], // Southeast
+        [-76.598568, 39.292665]  // Northwest
       ],
-      fitBoundsOptions: { padding: 50 } // Gives a nice 50px visual margin around the edges
+      fitBoundsOptions: { 
+        padding: 50,
+        pitch: 60,   // <-- Adds the dramatic 3D tilt (0 is flat, 60 is heavily angled)
+        bearing: 0   // <-- Ensures North stays perfectly "up" on the screen
+      }
     });
 
     this.map.on('load', () => {
@@ -26,6 +29,46 @@ export default class extends Controller {
         type: 'geojson',
         data: this.propertiesValue
       });
+
+      // Insert the layer beneath labels
+      const layers = this.map.getStyle().layers;
+      const labelLayerId = layers.find(
+        (layer) => layer.type === 'symbol' && layer.layout['text-field']
+      ).id;
+
+      this.map.addLayer(
+        {
+          'id': 'add-3d-buildings',
+          'source': 'composite',
+          'source-layer': 'building',
+          'filter': ['==', 'extrude', 'true'],
+          'type': 'fill-extrusion',
+          'minzoom': 15,
+          'paint': {
+            'fill-extrusion-color': '#aaa',
+            'fill-extrusion-height': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              15,
+              0,
+              15.05,
+              ['get', 'height']
+            ],
+            'fill-extrusion-base': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              15,
+              0,
+              15.05,
+              ['get', 'min_height']
+            ],
+            'fill-extrusion-opacity': 0.6
+          }
+        },
+        labelLayerId
+      );
 
       this.map.addLayer({
         id: 'parcel-fills',
